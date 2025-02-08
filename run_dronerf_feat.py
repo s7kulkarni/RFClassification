@@ -34,7 +34,7 @@ n_overlap_spec = 120
 win_type = 'hamming' # make ends of each segment match
 high_low = 'L' #'L', 'H' # high or low range of frequency
 feature_to_save = ['PSD'] # what features to generate and save: SPEC or PSD
-format_to_save = ['IMG'] # IMG or ARR or RAW
+format_to_save = ['ARR'] # IMG or ARR or RAW
 to_add = True
 spec_han_window = np.hanning(n_per_seg)
 
