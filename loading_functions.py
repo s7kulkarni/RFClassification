@@ -339,7 +339,7 @@ def load_dronerf_raw(main_folder, t_seg):
         rf_data_l = rf_data_l.flatten()
 
         if len(rf_data_h)!=len(rf_data_l):
-            print('diff', i, 'file name:', low_freq_files[i][1]) 
+            print('diff', i, 'file name:', low_freq_files[i][0]) 
             # not sure why one pair of files have different lengths (skip this file for now)
         else:
             # stack the features and ys
@@ -356,15 +356,15 @@ def load_dronerf_raw(main_folder, t_seg):
                 return rf_sig, n_keep, n_segs, len_seg
             Xs.append(rf_sig)
 
-            y_rep = np.repeat(int(low_freq_files[i][1][0]),n_segs)
-            y4_rep = np.repeat(int(low_freq_files[i][1][:3]),n_segs)
-            y10_rep = np.repeat(int(low_freq_files[i][1][:5]),n_segs)
+            y_rep = np.repeat(int(low_freq_files[i][0][0]),n_segs)
+            y4_rep = np.repeat(int(low_freq_files[i][0][:3]),n_segs)
+            y10_rep = np.repeat(int(low_freq_files[i][0][:5]),n_segs)
 
             ys.append(y_rep) # 2 class
             y4s.append(y4_rep) # 4 class
             y10s.append(y10_rep) # 10 class
 
-            if int(high_freq_files[i][1][:5])!= int(low_freq_files[i][1][:5]):
+            if int(high_freq_files[i][0][:5])!= int(low_freq_files[i][1][:5]):
                 raise Exception("File labels do not match")
 
     # shape the arrays
