@@ -332,10 +332,18 @@ def load_dronerf_raw(main_folder, t_seg):
 
     for i in range(len(high_freq_files)):
         # load RF data
-        rf_data_h = pd.read_csv(high_freq_files[i][1], header=None).values
+        try:
+            rf_data_h = pd.read_csv(high_freq_files[i][1], header=None).values
+        except Exception as e:
+            print("EXCEPTION ", e)
+            continue
         rf_data_h = rf_data_h.flatten()
 
-        rf_data_l = pd.read_csv(low_freq_files[i][1], header=None).values
+        try:
+            rf_data_l = pd.read_csv(low_freq_files[i][1], header=None).values
+        except Exception as e:
+            print("EXCEPTION ", e)
+            continue
         rf_data_l = rf_data_l.flatten()
 
         if len(rf_data_h)!=len(rf_data_l):
