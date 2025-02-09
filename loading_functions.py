@@ -364,7 +364,7 @@ def load_dronerf_raw(main_folder, t_seg):
             y4s.append(y4_rep) # 4 class
             y10s.append(y10_rep) # 10 class
 
-            if int(high_freq_files[i][0][:5])!= int(low_freq_files[i][1][:5]):
+            if int(high_freq_files[i][0][:5])!= int(low_freq_files[i][0][:5]):
                 raise Exception("File labels do not match")
 
     # shape the arrays
