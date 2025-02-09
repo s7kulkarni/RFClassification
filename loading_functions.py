@@ -309,13 +309,16 @@ def load_dronerf_raw(main_folder, t_seg):
     high_freq_files = []
     low_freq_files = []
 
+    # Walk through the directory and subdirectories
     for dirpath, _, filenames in os.walk(main_folder):
         for filename in filenames:
+            full_filepath = os.path.join(dirpath, filename)  # Full file path
+            
             # Check if 'H' or 'L' is in the file name
             if 'H' in filename:
-                high_freq_files.append(filename)
+                high_freq_files.append([filename, full_filepath])
             elif 'L' in filename:
-                low_freq_files.append(filename)
+                low_freq_files.append([filename, full_filepath])
 
     high_freq_files.sort()
     low_freq_files.sort()
@@ -329,10 +332,10 @@ def load_dronerf_raw(main_folder, t_seg):
 
     for i in range(len(high_freq_files)):
         # load RF data
-        rf_data_h = pd.read_csv(main_folder+'High/'+high_freq_files[i], header=None).values
+        rf_data_h = pd.read_csv(high_freq_files[i][1], header=None).values
         rf_data_h = rf_data_h.flatten()
 
-        rf_data_l = pd.read_csv(main_folder+'Low/'+low_freq_files[i], header=None).values
+        rf_data_l = pd.read_csv(low_freq_files[i][1], header=None).values
         rf_data_l = rf_data_l.flatten()
 
         if len(rf_data_h)!=len(rf_data_l):
