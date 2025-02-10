@@ -324,7 +324,7 @@ def load_dronerf_raw(main_folder, t_seg):
     low_freq_files.sort()
 
     for i in range(20):
-        print(high_freq_files[i][0], low_freq_files[i][0])
+        print(high_freq_files[i][1], low_freq_files[i][1])
 
     fs = 40e6 #40 MHz
 
