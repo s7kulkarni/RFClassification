@@ -345,7 +345,7 @@ def load_dronerf_raw(main_folder, t_seg):
 
         low_freq_file = ""
         for lff in low_freq_files:
-            if lff[0][:5] == high_freq_files[i][0][:5]:
+            if lff[0][:5] + lff[0][6:] == high_freq_files[i][0][:5] + high_freq_files[i][0][6:]:
                 low_freq_file = lff
         
         if low_freq_file == "":
