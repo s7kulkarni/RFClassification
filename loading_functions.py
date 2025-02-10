@@ -339,15 +339,23 @@ def load_dronerf_raw(main_folder, t_seg):
             continue
         rf_data_h = rf_data_h.flatten()
 
+        low_freq_file = ""
+        for lff in low_freq_files:
+            if lff[0][:5] == high_freq_files[i][0][:5]:
+                low_freq_file = lff
+        
+        if low_freq_file == "":
+            continue
+        print(high_freq_files[i], low_freq_file)
         try:
-            rf_data_l = pd.read_csv(low_freq_files[i][1], header=None).values
+            rf_data_l = pd.read_csv(low_freq_file[1], header=None).values
         except Exception as e:
             print("EXCEPTION ", e)
             continue
         rf_data_l = rf_data_l.flatten()
 
         if len(rf_data_h)!=len(rf_data_l):
-            print('diff', i, 'file name:', low_freq_files[i][0]) 
+            print('diff', i, 'file name:', low_freq_file[0]) 
             # not sure why one pair of files have different lengths (skip this file for now)
         else:
             # stack the features and ys
@@ -364,16 +372,16 @@ def load_dronerf_raw(main_folder, t_seg):
                 return rf_sig, n_keep, n_segs, len_seg
             Xs.append(rf_sig)
 
-            y_rep = np.repeat(int(low_freq_files[i][0][0]),n_segs)
-            y4_rep = np.repeat(int(low_freq_files[i][0][:3]),n_segs)
-            y10_rep = np.repeat(int(low_freq_files[i][0][:5]),n_segs)
+            y_rep = np.repeat(int(low_freq_file[0][0]),n_segs)
+            y4_rep = np.repeat(int(low_freq_file[0][:3]),n_segs)
+            y10_rep = np.repeat(int(low_freq_file[0][:5]),n_segs)
 
             ys.append(y_rep) # 2 class
             y4s.append(y4_rep) # 4 class
             y10s.append(y10_rep) # 10 class
 
-            if int(high_freq_files[i][0][:5])!= int(low_freq_files[i][0][:5]):
-                raise Exception("File labels do not match")
+            # if int(high_freq_files[i][0][:5])!= int(low_freq_files[i][0][:5]):
+            #     raise Exception("File labels do not match")
 
     # shape the arrays
     Xs_arr = np.array(Xs)
