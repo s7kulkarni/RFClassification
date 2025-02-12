@@ -121,7 +121,7 @@ def process_and_save_incrementally(checkpoint_dir='/home/zebra/shriniwas/checkpo
             MODELALBEL.append(int(low_freq_file[0][:5]))  # 10-class label
 
         # Save results for this file
-        save_array_rf(features_folder, arr_psd_folder, F_PSD, BILABEL, DRONELABEL, MODELALBEL, 'PSD', n_per_seg, i)
+        save_array_rf(features_folder+arr_psd_folder, F_PSD, BILABEL, DRONELABEL, MODELALBEL, 'PSD', n_per_seg, i)
 
         # Update checkpoint
         checkpoint = {
