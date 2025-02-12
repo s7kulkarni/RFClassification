@@ -129,7 +129,7 @@ def process_and_save_incrementally(checkpoint_dir='/home/zebra/shriniwas/checkpo
             'last_processed_idx': i
         }
         with open(checkpoint_file, 'wb') as f:
-            pickle.load(checkpoint, f)
+            pickle.dump(checkpoint, f)
 
         print(f"Processed and saved {high_freq_file[0]}")
 
