@@ -161,7 +161,7 @@ else:
             if sa_save or si_save:
             # calculate spectrogram
             # welch's method older
-#           fspec, t, Sxx = signal.spectrogram(d_real, fs, window=win_type, nperseg=n_per_seg)
+            # fspec, t, Sxx = signal.spectrogram(d_real, fs, window=win_type, nperseg=n_per_seg)
             
                 if si_save: # set up fig properties if saving images
                     plt.clf()

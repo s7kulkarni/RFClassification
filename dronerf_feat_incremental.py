@@ -27,9 +27,6 @@ def process_and_save_incrementally(checkpoint_dir='/home/zebra/shriniwas/checkpo
     if not os.path.exists(checkpoint_dir):
         os.makedirs(checkpoint_dir)
 
-    if not os.path.exists(features_folder):
-        os.makedirs(features_folder)
-
     # Load checkpoint if exists
     checkpoint_file = os.path.join(checkpoint_dir, 'checkpoint.pkl')
     if os.path.exists(checkpoint_file):
@@ -92,19 +89,24 @@ def process_and_save_incrementally(checkpoint_dir='/home/zebra/shriniwas/checkpo
             print(f"Length mismatch: {high_freq_file[0]} and {low_freq_file[0]}")
             continue
 
+        print("rf_data_h, rf_data_l shapes ", rf_data_h.shape, rf_data_l.shape)
         # Stack high and low frequency data
         rf_sig = np.vstack((rf_data_h, rf_data_l))
+        print("rf_sig shape ", rf_sig.shape)
 
         # Segment the data
         len_seg = int(t_seg / 1e3 * fs)
         n_segs = len(rf_data_h) // len_seg
         n_keep = n_segs * len_seg
+        print("len_seg, n_segs, n_keep : ", len_seg, n_segs, n_keep)
 
         try:
             rf_sig_segments = np.split(rf_sig[:, :n_keep], n_segs, axis=1)
         except Exception as e:
             print(f"Error splitting {high_freq_file[0]}: {e}")
             continue
+
+        print("rf_sig_segments shape ", rf_sig_segments.shape)
 
         # Process each segment
         F_PSD = []
@@ -122,6 +124,8 @@ def process_and_save_incrementally(checkpoint_dir='/home/zebra/shriniwas/checkpo
             BILABEL.append(int(low_freq_file[0][0]))  # 2-class label
             DRONELABEL.append(int(low_freq_file[0][:3]))  # 4-class label
             MODELALBEL.append(int(low_freq_file[0][:5]))  # 10-class label
+        
+        print("len F_PSD and component ", len(F_PSD), F_PSD[0].shape)
 
         # Save results for this file
         save_array_rf(features_folder+arr_psd_folder, F_PSD, BILABEL, DRONELABEL, MODELALBEL, 'PSD', n_per_seg, i)
