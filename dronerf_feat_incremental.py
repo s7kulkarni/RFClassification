@@ -54,7 +54,6 @@ def process_and_save_incrementally(checkpoint_dir='/home/zebra/shriniwas/checkpo
     low_freq_files.sort()
 
     print("TOTAL HIGH/LOW FREQ FILES", len(high_freq_files))
-    exit()
 
     # Process files incrementally
     for i in range(start_idx, len(high_freq_files)):
