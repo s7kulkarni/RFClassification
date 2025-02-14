@@ -105,7 +105,7 @@ def process_and_save_incrementally(checkpoint_dir='/home/zebra/shriniwas/checkpo
             print(f"Error splitting {high_freq_file[0]}: {e}")
             continue
 
-        print("rf_sig_segments shape ", rf_sig_segments.shape)
+        print("rf_sig_segments shape ", len(rf_sig_segments))
 
         # Process each segment
         F_PSD = []
