@@ -17,6 +17,8 @@ from sklearn.model_selection import GridSearchCV
 from sklearn.metrics import accuracy_score
 from sklearn.metrics import f1_score
 from sklearn.linear_model import LogisticRegression
+import torch
+from torch.utils.data import DataLoader
 
 from helper_functions import *
 from latency_helpers import *
@@ -34,6 +36,37 @@ importlib.reload(loading_functions)
 from loading_functions import *
 
 """### Load Features"""
+
+
+def get_arrays_efficient(dataset, batch_size=64):
+    """    
+    Args:
+        dataset (DroneRFTorch): The dataset object.
+        batch_size (int): Batch size for loading data. Adjust based on memory constraints.
+    
+    Returns:
+        X (np.ndarray): Concatenated feature arrays.
+        y (np.ndarray): Concatenated labels.
+    """
+    # Create a DataLoader
+    data_loader = DataLoader(dataset, batch_size=batch_size, shuffle=False, num_workers=4)
+
+    # Initialize lists to collect batches
+    X_batches = []
+    y_batches = []
+
+    # Iterate through the DataLoader
+    for batch_idx, (data, labels) in enumerate(data_loader):
+        X_batches.append(data.numpy())  # Convert tensors to numpy arrays
+        y_batches.append(labels.numpy())
+        print(f"Processed batch {batch_idx + 1}")
+
+    # Concatenate all batches
+    X = np.concatenate(X_batches, axis=0)
+    y = np.concatenate(y_batches, axis=0)
+
+    return X, y
+
 
 feat_name = 'PSD'
 t_seg = 1 #ms
@@ -54,7 +87,8 @@ elif which_dataset == 'dronedetect':
     dataset = DroneDetectTorch(dronedetect_feat_path, feat_name, t_seg, n_per_seg, feat_format,
                                     output_name, output_tensor, interferences)
 print("dataset loaded")
-X_use, y_use = dataset.get_arrays()
+# X_use, y_use = dataset.get_arrays()
+X_use, y_use = get_arrays_efficient(dataset, batch_size=64)
 
 # Set fixed number of samples
 # n_samps = 15500
