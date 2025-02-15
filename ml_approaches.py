@@ -57,8 +57,8 @@ def get_arrays_efficient(dataset, batch_size=64):
 
     # Iterate through the DataLoader
     for batch_idx, (data, labels) in enumerate(data_loader):
-        X_batches.append(data.numpy())  # Convert tensors to numpy arrays
-        y_batches.append(labels.numpy())
+        X_batches.append(np.array(data))  # Convert tensors to numpy arrays
+        y_batches.append(np.array(labels))
         print(f"Processed batch {batch_idx + 1}")
 
     # Concatenate all batches
