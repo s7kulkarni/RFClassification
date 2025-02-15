@@ -270,6 +270,7 @@ class DroneRFTorch(Dataset):
         
     # return all data at location
      def get_arrays(self):
+        print("len(self) ", len(self))
         i_all = list(range(len(self)))
         X_use, y_use = self.__getitem__(i_all)
         return X_use, y_use
