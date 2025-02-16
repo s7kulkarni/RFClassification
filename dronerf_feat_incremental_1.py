@@ -20,7 +20,7 @@ arr_psd_folder = "ARR_PSD_"+high_low+'_'+str(n_per_seg)+"_"+str(t_seg)+"/"
 main_folder = dronerf_raw_path
 
 
-def process_and_save_incrementally(checkpoint_dir='/home/zebra/shriniwas/checkpoints'):
+def process_and_save_incrementally(checkpoint_dir='/home/zebra/shriniwas/checkpoints_1'):
     """
     Processes drone RF data incrementally, calculates PSD, and saves results incrementally.
     """
