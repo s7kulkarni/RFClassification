@@ -9,10 +9,10 @@ from loading_functions import *
 from file_paths import *
 from feat_gen_functions import *
 
-t_seg = 1
+t_seg = 250
 fs = 40e6 #40 MHz
 features_folder = dronerf_feat_path
-n_per_seg = 1024 # length of each segment (powers of 2)
+n_per_seg = 8192 # length of each segment (powers of 2)
 n_overlap_spec = 120
 win_type = 'hamming' # make ends of each segment match
 high_low = 'L' #'L', 'H' # high or low range of frequency
