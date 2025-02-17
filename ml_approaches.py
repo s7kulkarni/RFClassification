@@ -98,7 +98,8 @@ X_use, y_use = get_arrays_efficient(dataset, batch_size=64)
 print(X_use.shape)
 print("loading finished")
 
-print(y_use[:10])
+print(y_use[:50])
+print(np.sum(y_use=='None'))
 
 """### Run Model"""
 
