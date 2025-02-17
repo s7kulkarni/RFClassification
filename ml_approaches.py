@@ -69,8 +69,8 @@ def get_arrays_efficient(dataset, batch_size=64):
 
 
 feat_name = 'PSD'
-t_seg = 1 #ms
-n_per_seg = 2048
+t_seg = 250 #ms
+n_per_seg = 8192
 interferences = ['WIFI', 'BLUE', 'BOTH', 'CLEAN']
 output_name = 'bi'
 feat_format = 'ARR'
