@@ -69,8 +69,8 @@ def get_arrays_efficient(dataset, batch_size=64):
 
 
 feat_name = 'PSD'
-t_seg = 250 #ms
-n_per_seg = 8192
+t_seg = 1 #ms
+n_per_seg = 2048
 interferences = ['WIFI', 'BLUE', 'BOTH', 'CLEAN']
 output_name = 'bi'
 feat_format = 'ARR'
@@ -90,12 +90,12 @@ print("dataset loaded")
 # X_use, y_use = dataset.get_arrays()
 X_use, y_use = get_arrays_efficient(dataset, batch_size=64)
 
-X_tmp, y_tmp = dataset.get_arrays()
+# X_tmp, y_tmp = dataset.get_arrays()
 
-print("all shapes", X_use.shape, y_use.shape, X_tmp.shape, y_tmp.shape)
+# print("all shapes", X_use.shape, y_use.shape, X_tmp.shape, y_tmp.shape)
 
-print("Xs equal", np.array_equal(X_use, X_tmp))
-print("Ys equal", np.array_equal(y_use, y_tmp))
+# print("Xs equal", np.array_equal(X_use, X_tmp))
+# print("Ys equal", np.array_equal(y_use, y_tmp))
 
 # Set fixed number of samples
 # n_samps = 15500
@@ -112,7 +112,7 @@ print(np.sum(y_use=='None'))
 
 model = PsdSVM(t_seg, n_per_seg)
 
-accs, f1s, runts = model.run_cv(X_tmp, y_tmp, k_fold=5)
+accs, f1s, runts = model.run_cv(X_use, y_use, k_fold=5)
 
 for icv in range(5):
     print(model.cv_models[icv].support_vectors_.shape)
