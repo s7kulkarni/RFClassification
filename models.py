@@ -35,7 +35,7 @@ class PsdSVM():
         self.nfft = nfft
         self.C = C
         self.gamma = gamma
-        self.svc = svm.SVC(kernel='rbf', C=self.C, gamma = self.gamma)
+        self.svc = svm.SVC(kernel='rbf', C=self.C, gamma = self.gamma, class_weight='balanced')
         
     def run_cv(self, X, y, k_fold=5):
         self.cv_acc_ls = []
