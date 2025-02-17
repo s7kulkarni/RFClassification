@@ -90,6 +90,13 @@ print("dataset loaded")
 # X_use, y_use = dataset.get_arrays()
 X_use, y_use = get_arrays_efficient(dataset, batch_size=64)
 
+X_tmp, y_tmp = dataset.get_arrays()
+
+print("all shapes", X_use.shape, y_use.shape, X_tmp.shape, y_tmp.shape)
+
+print("Xs equal", np.array_equal(X_use, X_tmp))
+print("Ys equal", np.array_equal(y_use, y_tmp))
+
 # Set fixed number of samples
 # n_samps = 15500
 # i_test= random.sample(range(len(dataset)), n_samps)
