@@ -126,62 +126,62 @@ def test_model(encode, model):
     accuracy_value = correct / total
     return accuracy_value.item()
 
-# feat_name = 'PSD'
-# t_seg = 250 #ms
-# n_per_seg = 4096
-# interferences = ['WIFI', 'BLUE', 'BOTH', 'CLEAN']
-# output_name = 'bi'
-# feat_format = 'ARR'
-# which_dataset = 'dronerf'
-# output_tensor = False
+feat_name = 'PSD'
+t_seg = 250 #ms
+n_per_seg = 4096
+interferences = ['WIFI', 'BLUE', 'BOTH', 'CLEAN']
+output_name = 'bi'
+feat_format = 'ARR'
+which_dataset = 'dronerf'
+output_tensor = False
 in_features = 2049
 DIMENSIONS = 10000
 seed = 3
 
-# print('Loading DroneRF Dataset')
-# highlow = 'L'
-# dataset = DroneRFTorch(dronerf_feat_path, feat_name, t_seg, n_per_seg,
-#                     feat_format, output_name, output_tensor, highlow)
+print('Loading DroneRF Dataset')
+highlow = 'L'
+dataset = DroneRFTorch(dronerf_feat_path, feat_name, t_seg, n_per_seg,
+                    feat_format, output_name, output_tensor, highlow)
 
-# print("dataset loaded")
-# # X_use, y_use = dataset.get_arrays()
-# X, Y = get_arrays_efficient(dataset, batch_size=64)
+print("dataset loaded")
+# X_use, y_use = dataset.get_arrays()
+X, Y = get_arrays_efficient(dataset, batch_size=64)
 
-################# DUMMY DATA
-def generate_dummy_data(num_samples=10, num_features=2049):
-    """
-    Generate dummy data where:
-    - If >85% of elements in a sample are 1, label is 1.
-    - If <15% of elements are 1, label is 0.
-    - No sample has between 15% and 85% ones.
+# ################# DUMMY DATA
+# def generate_dummy_data(num_samples=10, num_features=2049):
+#     """
+#     Generate dummy data where:
+#     - If >85% of elements in a sample are 1, label is 1.
+#     - If <15% of elements are 1, label is 0.
+#     - No sample has between 15% and 85% ones.
     
-    Args:
-    - num_samples: Number of samples to generate.
-    - num_features: Number of features in each sample.
+#     Args:
+#     - num_samples: Number of samples to generate.
+#     - num_features: Number of features in each sample.
     
-    Returns:
-    - X: Input data (num_samples, num_features).
-    - y: Labels (num_samples, 1).
-    """
-    X = np.zeros((num_samples, num_features), dtype=int)
-    y = np.zeros((num_samples, 1), dtype=int)
+#     Returns:
+#     - X: Input data (num_samples, num_features).
+#     - y: Labels (num_samples, 1).
+#     """
+#     X = np.zeros((num_samples, num_features), dtype=int)
+#     y = np.zeros((num_samples, 1), dtype=int)
 
-    for i in range(num_samples):
-        if np.random.rand() < 0.5:  # Randomly decide label 0 or 1
-            ones_count = np.random.randint(0, int(0.4 * num_features) + 1)  # ≤15% ones
-            y[i] = 0
-        else:
-            ones_count = np.random.randint(int(0.6 * num_features), num_features + 1)  # ≥85% ones
-            y[i] = 1
+#     for i in range(num_samples):
+#         if np.random.rand() < 0.5:  # Randomly decide label 0 or 1
+#             ones_count = np.random.randint(0, int(0.4 * num_features) + 1)  # ≤15% ones
+#             y[i] = 0
+#         else:
+#             ones_count = np.random.randint(int(0.6 * num_features), num_features + 1)  # ≥85% ones
+#             y[i] = 1
 
-        # Randomly pick the indices to set to 1
-        ones_indices = np.random.choice(num_features, ones_count, replace=False)
-        X[i, ones_indices] = 1  # Set the selected indices to 1
+#         # Randomly pick the indices to set to 1
+#         ones_indices = np.random.choice(num_features, ones_count, replace=False)
+#         X[i, ones_indices] = 1  # Set the selected indices to 1
 
-    return X, y
+#     return X, y
 
-X, Y = generate_dummy_data()
-print("DUMMY DATA SHAPE",X.shape, Y.shape)
+# X, Y = generate_dummy_data()
+# print("DUMMY DATA SHAPE",X.shape, Y.shape)
 
 ###############################
 
