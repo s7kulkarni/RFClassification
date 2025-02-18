@@ -10,7 +10,6 @@ from torch.utils.data import DataLoader
 
 from helper_functions import *
 from latency_helpers import *
-# from loading_functions import *
 from file_paths import *
 from models import *
 import importlib
@@ -25,15 +24,17 @@ import torchhd
 from torchhd.models import Centroid
 import copy
 import argparse
-# from tabulate import tabulate 
 import random
 import random
 import importlib
-# import loading_functions
-# importlib.reload(loading_functions)
 from sklearn.model_selection import StratifiedKFold
 from sklearn.preprocessing import LabelEncoder
-# from loading_functions import *
+
+# remove to run locally
+import loading_functions
+importlib.reload(loading_functions)
+from loading_functions import *
+#
 
 def get_arrays_efficient(dataset, batch_size=64):
     """    
