@@ -137,7 +137,7 @@ which_dataset = 'dronerf'
 output_tensor = False
 in_features = 2049
 DIMENSIONS = 10000
-seed = 3
+seed = 8
 
 print('Loading DroneRF Dataset')
 highlow = 'L'
@@ -215,7 +215,7 @@ for fold, (train_idx, test_idx) in enumerate(skf.split(X_tensor, Y_tensor)):
     train_ld = torch.utils.data.DataLoader(train_dataset, batch_size=1, shuffle=True)
     test_ld = torch.utils.data.DataLoader(test_dataset, batch_size=1, shuffle=False)
 
-    set_seed(89)
+    set_seed(seed)
 
 
     encode = RandomProjectionEncoder(DIMENSIONS, in_features).to(device)
