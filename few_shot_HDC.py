@@ -128,14 +128,14 @@ def test_model(encode, model):
     return accuracy_value.item()
 
 feat_name = 'PSD'
-t_seg = 250 #ms
-n_per_seg = 4096
+t_seg = 20 #ms
+n_per_seg = 1024
 interferences = ['WIFI', 'BLUE', 'BOTH', 'CLEAN']
 output_name = 'bi'
 feat_format = 'ARR'
 which_dataset = 'dronerf'
 output_tensor = False
-in_features = 2049
+in_features = 513
 DIMENSIONS = 10000
 seed = 11
 
