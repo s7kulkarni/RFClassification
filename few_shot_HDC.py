@@ -205,20 +205,20 @@ n_samples_per_class = 5
 for fold, (train_idx, test_idx) in enumerate(skf.split(X_tensor, Y_tensor)):
     print(f"Fold {fold + 1}/{k_folds}")
 
-    # Split data into train and test sets for this fold
-    X_train, X_test = X_tensor[train_idx], X_tensor[test_idx]
-    Y_train, Y_test = Y_tensor[train_idx], Y_tensor[test_idx]
+    # # Split data into train and test sets for this fold
+    # X_train, X_test = X_tensor[train_idx], X_tensor[test_idx]
+    # Y_train, Y_test = Y_tensor[train_idx], Y_tensor[test_idx]
 
-    # Few-shot learning: Select `n_samples_per_class` for each class
-    few_shot_train_indices = []
-    for class_label in torch.unique(Y_train):
-        class_indices = torch.where(Y_train == class_label)[0]
-        selected_indices = np.random.choice(class_indices, size=n_samples_per_class, replace=False)
-        few_shot_train_indices.extend(selected_indices)
+    # # Few-shot learning: Select `n_samples_per_class` for each class
+    # few_shot_train_indices = []
+    # for class_label in torch.unique(Y_train):
+    #     class_indices = torch.where(Y_train == class_label)[0]
+    #     selected_indices = np.random.choice(class_indices, size=n_samples_per_class, replace=False)
+    #     few_shot_train_indices.extend(selected_indices)
 
-    # Use only the selected few-shot samples for training
-    X_train = X_train[few_shot_train_indices]
-    Y_train = Y_train[few_shot_train_indices]
+    # # Use only the selected few-shot samples for training
+    # X_train = X_train[few_shot_train_indices]
+    # Y_train = Y_train[few_shot_train_indices]
 
     # Create DataLoader for training and testing
     train_dataset = torch.utils.data.TensorDataset(X_train, Y_train)
