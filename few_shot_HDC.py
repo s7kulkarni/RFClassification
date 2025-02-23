@@ -103,7 +103,7 @@ def train_full_precision(encode, model):
             # Encode the samples using the random projection matrix
             samples_hv = encode(samples)
             # Add the encoded hypervectors to the model
-            model.add(samples_hv, labels)
+            model.add_online(samples_hv, labels)
 
 def test_model(encode, model):
     accuracy = torchmetrics.Accuracy("multiclass", num_classes=len(label_encoder.classes_)).to(device)
@@ -137,7 +137,7 @@ which_dataset = 'dronerf'
 output_tensor = False
 in_features = 2049
 DIMENSIONS = 10000
-seed = 8
+seed = 11
 
 print('Loading DroneRF Dataset')
 highlow = 'L'
@@ -199,7 +199,8 @@ skf = StratifiedKFold(n_splits=k_folds, shuffle=True, random_state=42)
 # Store accuracy for each fold
 fold_accuracies = []
 
-
+# Few-shot learning: Number of samples per class for training
+n_samples_per_class = 5
 
 for fold, (train_idx, test_idx) in enumerate(skf.split(X_tensor, Y_tensor)):
     print(f"Fold {fold + 1}/{k_folds}")
@@ -207,6 +208,17 @@ for fold, (train_idx, test_idx) in enumerate(skf.split(X_tensor, Y_tensor)):
     # Split data into train and test sets for this fold
     X_train, X_test = X_tensor[train_idx], X_tensor[test_idx]
     Y_train, Y_test = Y_tensor[train_idx], Y_tensor[test_idx]
+
+    # Few-shot learning: Select `n_samples_per_class` for each class
+    few_shot_train_indices = []
+    for class_label in torch.unique(Y_train):
+        class_indices = torch.where(Y_train == class_label)[0]
+        selected_indices = np.random.choice(class_indices, size=n_samples_per_class, replace=False)
+        few_shot_train_indices.extend(selected_indices)
+
+    # Use only the selected few-shot samples for training
+    X_train = X_train[few_shot_train_indices]
+    Y_train = Y_train[few_shot_train_indices]
 
     # Create DataLoader for training and testing
     train_dataset = torch.utils.data.TensorDataset(X_train, Y_train)
