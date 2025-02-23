@@ -205,9 +205,9 @@ n_samples_per_class = 5
 for fold, (train_idx, test_idx) in enumerate(skf.split(X_tensor, Y_tensor)):
     print(f"Fold {fold + 1}/{k_folds}")
 
-    # # Split data into train and test sets for this fold
-    # X_train, X_test = X_tensor[train_idx], X_tensor[test_idx]
-    # Y_train, Y_test = Y_tensor[train_idx], Y_tensor[test_idx]
+    # Split data into train and test sets for this fold
+    X_train, X_test = X_tensor[train_idx], X_tensor[test_idx]
+    Y_train, Y_test = Y_tensor[train_idx], Y_tensor[test_idx]
 
     # # Few-shot learning: Select `n_samples_per_class` for each class
     # few_shot_train_indices = []
