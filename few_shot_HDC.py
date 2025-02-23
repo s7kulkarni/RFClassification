@@ -128,14 +128,14 @@ def test_model(encode, model):
     return accuracy_value.item()
 
 feat_name = 'PSD'
-t_seg = 20 #ms
-n_per_seg = 1024
+t_seg = 250 #ms
+n_per_seg = 4096
 interferences = ['WIFI', 'BLUE', 'BOTH', 'CLEAN']
 output_name = 'bi'
 feat_format = 'ARR'
 which_dataset = 'dronerf'
 output_tensor = False
-in_features = 513
+in_features = 2049
 DIMENSIONS = 10000
 seed = 11
 
@@ -209,16 +209,16 @@ for fold, (train_idx, test_idx) in enumerate(skf.split(X_tensor, Y_tensor)):
     X_train, X_test = X_tensor[train_idx], X_tensor[test_idx]
     Y_train, Y_test = Y_tensor[train_idx], Y_tensor[test_idx]
 
-    # # Few-shot learning: Select `n_samples_per_class` for each class
-    # few_shot_train_indices = []
-    # for class_label in torch.unique(Y_train):
-    #     class_indices = torch.where(Y_train == class_label)[0]
-    #     selected_indices = np.random.choice(class_indices, size=n_samples_per_class, replace=False)
-    #     few_shot_train_indices.extend(selected_indices)
+    # Few-shot learning: Select `n_samples_per_class` for each class
+    few_shot_train_indices = []
+    for class_label in torch.unique(Y_train):
+        class_indices = torch.where(Y_train == class_label)[0]
+        selected_indices = np.random.choice(class_indices, size=n_samples_per_class, replace=False)
+        few_shot_train_indices.extend(selected_indices)
 
-    # # Use only the selected few-shot samples for training
-    # X_train = X_train[few_shot_train_indices]
-    # Y_train = Y_train[few_shot_train_indices]
+    # Use only the selected few-shot samples for training
+    X_train = X_train[few_shot_train_indices]
+    Y_train = Y_train[few_shot_train_indices]
 
     # Create DataLoader for training and testing
     train_dataset = torch.utils.data.TensorDataset(X_train, Y_train)
