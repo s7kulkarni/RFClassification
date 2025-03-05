@@ -45,7 +45,19 @@ class PsdSVM():
         cv = KFold(n_splits=k_fold, random_state=None, shuffle=True)
         for i, (train_ix, test_ix) in tqdm(enumerate(cv.split(X))):
             svc = svm.SVC(kernel='rbf', C=8, gamma = 512, class_weight='balanced')
-            svc.fit(X[train_ix], y[train_ix])
+
+            ## FEW SHOT
+            few_shot_train_indices = []
+            n_samples_per_class = 5
+            for class_label in np.unique(y[train_ix]):
+                class_indices = np.where(y[train_ix] == class_label)[0]
+                selected_indices = np.random.choice(class_indices, size=min(len(class_indices), n_samples_per_class), replace=False)
+                few_shot_train_indices.extend(selected_indices)
+
+            # Convert few_shot_train_indices to use with train_ix
+            few_shot_indices = train_ix[few_shot_train_indices]
+
+            svc.fit(X[few_shot_indices], y[few_shot_indices])
             
 #             t_start = time.time()
 #             y_pred = svc.predict(X[test_ix])
