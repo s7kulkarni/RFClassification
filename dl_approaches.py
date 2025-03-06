@@ -97,7 +97,7 @@ dataset.__getitem__(100)[0][0].min()
 """## Run Model"""
 
 num_classes = len(dataset.unique_labels)
-which_model = 'vgg' # or 'resnet'
+which_model = '1dconv' # or 'resnet'
 if which_model == 'vgg':
     Model = VGGFC(num_classes, isarray=(feat_format=='ARR'))
 elif which_model == 'resnet':
