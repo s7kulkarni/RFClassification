@@ -69,7 +69,7 @@ n_per_seg = 4096
 
 output_name = 'bi'
 feat_format = 'ARR'# ARR, IMG
-which_dataset = 'droneRF'
+which_dataset = 'dronerf'
 output_tensor = True
 
 # dataset specific parameters
