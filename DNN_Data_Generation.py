@@ -28,7 +28,7 @@ def find_and_load_file(root_dir, b, n, suffix):
         for filename in filenames:
             if filename == f"{b}{suffix}_{n}.csv":
                 return np.loadtxt(os.path.join(dirpath, filename), delimiter=',')
-    raise FileNotFoundError(f"File {b}{suffix}_{n}.csv not found in {root_dir}")
+    return None
 
 # Main processing loop
 for opt in BUI:
@@ -47,6 +47,9 @@ for opt in BUI:
             # Loading raw CSV files
             x = find_and_load_file(load_filename, b, n, 'L')
             y = find_and_load_file(load_filename, b, n, 'H')
+
+            if x is None or y is None:
+                continue
 
             # Re-segmenting and signal transformation
             for i in range(len(x) // L):
