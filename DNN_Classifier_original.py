@@ -58,13 +58,14 @@ print("Loading Data ...")
 Data = np.loadtxt("/home/zebra/shriniwas/DNN/RF_Data.csv", delimiter=",")
 ############################## Splitting #################################
 print("Preparing Data ...")
-x = np.transpose(Data[0:2047,:])
-Label_1 = np.transpose(Data[2048:2049,:]); Label_1 = Label_1.astype(int);
-Label_2 = np.transpose(Data[2049:2050,:]); Label_2 = Label_2.astype(int);
-Label_3 = np.transpose(Data[2050:2051,:]); Label_3 = Label_3.astype(int);
+x = Data[0:2048, :]  # Features (frequency bins)
+Label_1 = Data[2048, :].astype(int)  # Binary labels
+Label_2 = Data[2049, :].astype(int)  # Multi-class labels
+Label_3 = Data[2050, :].astype(int)  # Index-based labels
 y = encode(Label_1)
 print(y.shape)
 print(x.shape)
+print(Data.shape)
 ################################ Main ####################################
 cvscores    = []
 cnt         = 0
