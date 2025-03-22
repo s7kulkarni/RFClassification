@@ -56,6 +56,13 @@ def runkfoldcv(model, dataset, device, k_folds, batch_size, learning_rate, num_e
                           dataset,
                           batch_size=batch_size, sampler=test_subsampler)
 
+        # # data shape
+        # for inputs, labels in trainloader:
+        #     print(f"trainloader Input shape: {inputs.shape}")
+        #     print(f"trainloader Label shape: {labels.shape}")
+        #     break  # Just print the shape of the first batch, then stop
+
+
         # Init the neural network
         model = model.to(device)
         model.reset_weights()
