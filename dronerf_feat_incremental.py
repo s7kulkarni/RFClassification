@@ -16,7 +16,8 @@ n_per_seg = 8192 # length of each segment (powers of 2)
 n_overlap_spec = 120
 win_type = 'hamming' # make ends of each segment match
 high_low = 'L' #'L', 'H' # high or low range of frequency
-arr_psd_folder = "ARR_PSD_"+high_low+'_'+str(n_per_seg)+"_"+str(t_seg)+"/"
+arr_psd_folder = "ARR_PSD_"+high_low+'_'+str(n_per_seg)+"_"+str(t_seg)+"_"+"PERTURBED"+"_"+"bi"+"/"
+perturbation_filepath = "/home/zebra/shriniwas/RFClassification/two_class_perturbation_0004.npy"
 main_folder = dronerf_raw_path
 
 
@@ -87,6 +88,29 @@ def process_and_save_incrementally(checkpoint_dir='/home/zebra/shriniwas/checkpo
         if len(rf_data_h) != len(rf_data_l):
             print(f"Length mismatch: {high_freq_file[0]} and {low_freq_file[0]}")
             continue
+
+        ########## ADDING PERTURBATION
+        p_array = np.load(perturbation_filepath)
+    
+        # Calculate the tiling factor needed
+        tiling_factor = len(rf_data_l) // len(p_array)
+        
+        # Check if the division is clean
+        if len(rf_data_l) % len(p_array) != 0:
+            print(f"Warning: RF array length ({len(rf_data_l)}) is not a multiple of perturbation length ({len(p_array)})")
+            # Round up to ensure the tiled array is at least as long as the target
+            tiling_factor += 1
+        
+        # Tile the array
+        tiled_array = np.tile(p_array, tiling_factor)
+        
+        # Trim if necessary to match the target array length
+        if len(tiled_array) > len(rf_data_l):
+            tiled_array = tiled_array[:len(rf_data_l)]
+        
+        # Add to the target array
+        rf_data_l = rf_data_l + tiled_array
+        ############ PERTURBED!
 
         print("rf_data_h, rf_data_l shapes ", rf_data_h.shape, rf_data_l.shape)
         # Stack high and low frequency data
