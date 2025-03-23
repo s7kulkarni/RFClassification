@@ -65,7 +65,7 @@ def get_arrays_efficient(dataset, batch_size=64):
     return X, y
 
 # Set device to GPU if available
-device = torch.device("cuda" if torch.cuda.is_available() else "mps")
+device = torch.device("cuda" if torch.cuda.is_available() else ("mps" if torch.backends.mps.is_available() else "cpu"))
 print("Using {} device".format(device))
 
 # Set random seed for reproducibility
