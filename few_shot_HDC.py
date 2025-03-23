@@ -195,6 +195,9 @@ Y_int = label_encoder.fit_transform(Y)
 X_tensor = torch.tensor(X, dtype=torch.float32)  # (219, 4097)
 Y_tensor = torch.tensor(Y_int, dtype=torch.long)  # (219,)
 
+X_perturbed = torch.tensor(X_perturbed, dtype=torch.float32)  # (219, 4097)
+Y_perturbed = torch.tensor(Y_perturbed, dtype=torch.long)  # (219,)
+
 # K-Fold Cross-Validation
 k_folds = 5  # You can change this
 skf = StratifiedKFold(n_splits=k_folds, shuffle=True, random_state=42)
