@@ -132,6 +132,47 @@ class PsdSVM():
 
         self.print_result(str(k_fold)+' Fold CV', self.cv_acc_ls, self.cv_f1_ls, self.cv_runt_ls)
         return self.cv_acc_ls, self.cv_f1_ls, self.cv_runt_ls
+
+
+    def run_gridsearch_perturbed(self, X, y, X_p, y_p,  params, k_fold=5):
+        self.grid_best_params_ls = []
+        self.grid_acc_ls = []
+        self.grid_f1_ls = []
+        self.grid_runt_ls = []
+        
+        kf = KFold(n_splits=k_fold, random_state=None, shuffle=True)
+
+        for i, (train_ix, test_ix) in enumerate(kf.split(X)):
+
+            # find the optimal hypber parameters
+            svc = svm.SVC(kernel='rbf', gamma = self.gamma)
+            clf = GridSearchCV(svc, params, n_jobs=1)
+            clf.fit(X[train_ix], y[train_ix])
+
+            print('Fold '+str(i+1)+' Best Parameters: '+ str(clf.best_params_))
+            self.grid_best_params_ls.append(clf.best_params_)
+
+            # predict on the test data
+            t_start = time.time()
+#             y_pred = clf.predict(X[test_ix])
+            
+            y_pred, runtimes = atomic_benchmark_estimator(clf, X_p[test_ix], y.dtype, verbose=False) # predict & measure time
+        
+#             print(y_pred)
+#             
+            acc = accuracy_score(y_p[test_ix], y_pred)
+#             print(y_pred)
+#             print(y[test_ix])
+            f1 = f1_score(y_p[test_ix], y_pred, average='weighted')
+            print('Fold '+str(i+1)+': Accuracy: {:.3},\t F1: {:.3}, \t Runtime: {:.3}'.format(acc,f1, np.mean(runtimes)))
+            
+            # Append to List
+            self.grid_acc_ls.append(acc)
+            self.grid_f1_ls.append(f1)
+            self.grid_runt_ls.append(np.mean(runtimes))
+        
+        self.print_result(str(k_fold)+' Fold GridSearch CV', self.grid_acc_ls, self.grid_f1_ls, self.grid_runt_ls)
+        return self.grid_acc_ls, self.grid_f1_ls, self.grid_runt_ls, self.grid_best_params_ls
         
     def run_gridsearch(self, X, y, params, k_fold=5):
         self.grid_best_params_ls = []
