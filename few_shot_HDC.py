@@ -149,6 +149,7 @@ print("dataset loaded")
 # X_use, y_use = dataset.get_arrays()
 X, Y = get_arrays_efficient(dataset, batch_size=64)
 X_perturbed, Y_perturbed = get_arrays_efficient(perturbed_dataset, batch_size=64)
+print("SHAPES ", X.shape, Y.shape, X_perturbed.shape, Y_perturbed.shape)
 
 # ################# DUMMY DATA
 # def generate_dummy_data(num_samples=10, num_features=2049):
