@@ -37,6 +37,54 @@ class PsdSVM():
         self.gamma = gamma
         self.svc = svm.SVC(kernel='rbf', C=self.C, gamma = self.gamma)
         
+    def run_cv_perturbed(self, X, y, X_p, y_p, k_fold=5):
+        self.cv_acc_ls = []
+        self.cv_f1_ls = []
+        self.cv_runt_ls = []
+        self.cv_models = []
+        cv = KFold(n_splits=k_fold, random_state=None, shuffle=True)
+        for i, (train_ix, test_ix) in tqdm(enumerate(cv.split(X))):
+            svc = svm.SVC(kernel='rbf', C=self.C, gamma = self.gamma, class_weight='balanced')
+
+            # ## FEW SHOT
+            # few_shot_train_indices = []
+            # n_samples_per_class = 5
+            # for class_label in np.unique(y[train_ix]):
+            #     class_indices = np.where(y[train_ix] == class_label)[0]
+            #     selected_indices = np.random.choice(class_indices, size=min(len(class_indices), n_samples_per_class), replace=False)
+            #     few_shot_train_indices.extend(selected_indices)
+
+            # # Convert few_shot_train_indices to use with train_ix
+            # few_shot_indices = train_ix[few_shot_train_indices]
+
+            svc.fit(X[train_ix], y[train_ix])
+            
+#             t_start = time.time()
+#             y_pred = svc.predict(X[test_ix])
+#             t_dur = time.time()-t_start
+#             t_batch_avg = t_dur/len(y_pred)
+            
+                        # predict on the test data (by each sample)
+            y_pred, t_indiv = atomic_benchmark_estimator(svc, X_p[test_ix], output_type=y.dtype, verbose=False)
+            t_indiv_avg = np.mean(t_indiv)
+            t_inf = t_indiv_avg # inference time
+            
+            acc = accuracy_score(y_p[test_ix], y_pred)
+            f1 = f1_score(y_p[test_ix], y_pred, average='weighted')
+            
+            print('Fold '+str(i+1)+': Accuracy: {:.3},\t F1: {:.3}, \t Runtime: {:.3}'.format(acc,f1, t_inf))
+            
+            show_confusion_matrix(y_p[test_ix], y_pred)
+
+            # Add to Lists
+            self.cv_runt_ls.append(t_inf)
+            self.cv_acc_ls.append(acc)
+            self.cv_f1_ls.append(f1)
+            self.cv_models.append(svc)
+
+        self.print_result(str(k_fold)+' Fold CV', self.cv_acc_ls, self.cv_f1_ls, self.cv_runt_ls)
+        return self.cv_acc_ls, self.cv_f1_ls, self.cv_runt_ls
+
     def run_cv(self, X, y, k_fold=5):
         self.cv_acc_ls = []
         self.cv_f1_ls = []

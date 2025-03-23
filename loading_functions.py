@@ -168,6 +168,116 @@ def is_interference(file_name, int_list):
     
     return False
 
+
+### 2. DroneRF DATASET ### 
+class DroneRFTorchPerturbed(Dataset):
+#     feat_folder, feat_name, seg_len, n_per_seg, highlow, output_feat
+     def __init__(self, feat_folder, feat_name, seg_len, n_per_seg, feat_format, output_feat, output_tensor, highlow, to_norm=False, type='bi'):
+        self.feat_format = feat_format
+        self.output_feat = output_feat
+        self.output_tensor = output_tensor
+        self.feat_name = feat_name
+        self.to_norm = to_norm
+
+        if feat_name == 'RAW':
+            sub_folder_name = feat_format+'_'+feat_name+'_'+str(10000)+'_'+str(seg_len)+'/'
+        else:
+            sub_folder_name = feat_format+'_'+feat_name+'_'+highlow+'_'+str(n_per_seg)+'_'+str(seg_len)+'_'+'PERTURBED'+'_'+type+'/'
+        self.dir_name = feat_folder+sub_folder_name
+        print(self.dir_name)
+        self.files = os.listdir(self.dir_name)
+        
+        # convert output drone codes to names
+        if self.output_feat == 'drones':
+            self.bui_to_class = {0:"None", 101:"AR", 100:"Bebop", 110:"Phantom"}
+        elif self.output_feat == 'modes':
+            self.bui_to_class = {0:"None", 
+                                 10000:"Bebop1", 10001:"Bebop2", 10010:"Bebop3", 10011:"Bebop4",
+                                10100:"AR1", 10101:"AR2", 10110:"AR3", 10111:"AR4",
+                                11000:"Phantom1", 11001:"Phantom2", 11010:"Phantom3", 11011:"Phantom4"}
+        elif self.output_feat =='bi':
+            self.bui_to_class = {0:"None", 1:"Drone"}
+            
+        self.class_to_idx = {lbl:i for i,lbl in enumerate(self.bui_to_class.values())}
+        self.idx_to_class = {i:lbl for i,lbl in enumerate(self.bui_to_class.values())}
+        self.unique_labels = list(self.bui_to_class.values())
+
+     # get the length of each of the files (multiple samples in each file
+        self.fi_lens = np.zeros(len(self.files))
+        if self.feat_format == 'ARR':
+            for i, fi in enumerate(self.files):
+                DATA = np.load(self.dir_name+self.files[i], allow_pickle=True).item()['feat']
+                try:
+                    self.fi_lens[i] = self.fi_lens[i-1]+len(DATA)  
+                except:
+                    self.fi_lens[i] = len(DATA)
+            self.fi_lens = self.fi_lens.astype(int)
+
+        # print data shape
+        print('dataset size', len(self))
+        print('shape of each item', self.__getitem__(0)[0].shape)
+#         print('test')
+
+     def __len__(self):
+        if self.feat_format == 'IMG':
+            return len(self.files) # one image per file
+        else:
+            return self.fi_lens[-1] # multiple samples per file - get the last of the lengths
+    
+     def __getitem__(self, i):
+        if not isinstance(i, list):
+            # if single integer
+            return self.__getitemsingle__(i)
+        ft_ls = []
+        lb_ls = []
+        for ii in i:
+            ft, lb = self.__getitemsingle__(ii)
+            ft_ls.append(ft)
+            lb_ls.append(lb)
+            
+        return np.array(ft_ls), np.array(lb_ls)
+    
+     def __getitemsingle__(self, i):
+        if self.feat_format == 'ARR':
+            # convert i to file number and index within file
+            i_file = np.argwhere(self.fi_lens>i)[0][0]
+            DATA = np.load(self.dir_name+self.files[i_file], allow_pickle=True).item()            
+            i_infile = int(len(DATA['feat'])- (self.fi_lens[i_file]-i))
+            Feat = DATA['feat'][i_infile]
+            
+            # apply norm
+            if self.to_norm:
+                Feat = Feat/np.max(Feat)
+            Label = DATA[self.output_feat][i_infile]
+            Label = self.bui_to_class[Label]
+                
+        elif self.feat_format == 'IMG':
+            DATA = cv2.imread(self.dir_name+self.files[i])
+            DATA = cv2.cvtColor(DATA, cv2.COLOR_BGR2RGB)
+            Feat = DATA/255
+            Label = self.bui_to_class[self.get_bui(self.files[i], self.output_feat)]
+        
+        if self.output_tensor:
+            Feat = torch.tensor(Feat).float()
+            Label = self.class_to_idx[Label]
+                
+        return Feat,Label
+        
+    # return all data at location
+     def get_arrays(self):
+        print("len(self) ", len(self))
+        i_all = list(range(len(self)))
+        X_use, y_use = self.__getitem__(i_all)
+        return X_use, y_use
+    
+     def get_bui(self, fi, label_name):
+            bui = fi.split('_')[0]
+            if label_name == 'bi':
+                return int(bui[0])
+            if label_name == 'drones':
+                return int(bui[:3])
+            if label_name == 'modes':
+                return int(bui[:5])
             
 
 ### 2. DroneRF DATASET ### 
