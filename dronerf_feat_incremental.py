@@ -16,8 +16,8 @@ n_per_seg = 4096 # length of each segment (powers of 2)
 n_overlap_spec = 120
 win_type = 'hamming' # make ends of each segment match
 high_low = 'L' #'L', 'H' # high or low range of frequency
-arr_psd_folder = "ARR_PSD_"+high_low+'_'+str(n_per_seg)+"_"+str(t_seg)+"_"+"PERTURBED"+"_"+"bi"+"/"
-perturbation_filepath = "/home/zebra/shriniwas/RFClassification/two_class_perturbation_0004.npy"
+arr_psd_folder = "ARR_PSD_"+high_low+'_'+str(n_per_seg)+"_"+str(t_seg)+"_"+"PERTURBED"+"_"+"bi"+"_"+"001"+"/"
+perturbation_filepath = "/home/zebra/shriniwas/RFClassification/two_class_perturbation_001.npy"
 main_folder = dronerf_raw_path
 
 

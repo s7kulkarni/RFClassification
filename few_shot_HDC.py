@@ -132,6 +132,7 @@ t_seg = 250 #ms
 n_per_seg = 4096
 interferences = ['WIFI', 'BLUE', 'BOTH', 'CLEAN']
 output_name = 'drones'
+power_ratio = '0004' # 0.xxx mapped to xxx
 feat_format = 'ARR'
 which_dataset = 'dronerf'
 output_tensor = False
@@ -144,7 +145,7 @@ highlow = 'L'
 dataset = DroneRFTorch(dronerf_feat_path, feat_name, t_seg, n_per_seg,
                     feat_format, output_name, output_tensor, highlow)
 perturbed_dataset = DroneRFTorchPerturbed(dronerf_feat_path, feat_name, t_seg, n_per_seg,
-                    feat_format, output_name, output_tensor, highlow, output_name)
+                    feat_format, output_name, output_tensor, highlow, output_name, power_ratio)
 print("dataset loaded")
 # X_use, y_use = dataset.get_arrays()
 X, Y = get_arrays_efficient(dataset, batch_size=64)
