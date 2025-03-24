@@ -131,8 +131,8 @@ feat_name = 'PSD'
 t_seg = 250 #ms
 n_per_seg = 4096
 interferences = ['WIFI', 'BLUE', 'BOTH', 'CLEAN']
-output_name = 'drones'
-power_ratio = '0004' # 0.xxx mapped to xxx
+output_name = 'bi'
+power_ratio = '001' # 0.xxx mapped to xxx
 feat_format = 'ARR'
 which_dataset = 'dronerf'
 output_tensor = False
@@ -225,8 +225,8 @@ for fold, (train_idx, test_idx) in enumerate(skf.split(X_tensor, Y_tensor)):
         few_shot_train_indices.extend(selected_indices)
 
     # Use only the selected few-shot samples for training
-    X_train = X_train[few_shot_train_indices]
-    Y_train = Y_train[few_shot_train_indices]
+    # X_train = X_train[few_shot_train_indices]
+    # Y_train = Y_train[few_shot_train_indices]
 
     # Create DataLoader for training and testing
     train_dataset = torch.utils.data.TensorDataset(X_train, Y_train)
