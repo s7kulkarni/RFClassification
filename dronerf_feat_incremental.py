@@ -109,7 +109,11 @@ def process_and_save_incrementally(checkpoint_dir='/home/zebra/shriniwas/checkpo
             tiled_array = tiled_array[:len(rf_data_l)]
         
         # Add to the target array
+        print("IS TILED ARRAY 0? ", np.isclose(tiled_array, 0.0, atol=1e-5))
+        print("ARE ORIG N PERTURBED CLOSE?", np.allclose(rf_data_l, rf_data_l + tiled_array, atol=1e-5))
+        print("NORM RATIO", np.linalg.norm(tiled_array)/np.linalg.norm(rf_data_l))
         rf_data_l = rf_data_l + tiled_array
+        exit()
         ############ PERTURBED!
 
         print("rf_data_h, rf_data_l shapes ", rf_data_h.shape, rf_data_l.shape)
