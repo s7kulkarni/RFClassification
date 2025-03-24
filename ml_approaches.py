@@ -82,9 +82,9 @@ if which_dataset == 'dronerf':
     print('Loading DroneRF Dataset')
     highlow = 'L'
     dataset = DroneRFTorch(dronerf_feat_path, feat_name, t_seg, n_per_seg,
-                       feat_format, output_name, output_tensor, highlow, True)
+                       feat_format, output_name, output_tensor, highlow)
     perturbed_dataset = DroneRFTorchPerturbed(dronerf_feat_path, feat_name, t_seg, n_per_seg,
-                        feat_format, output_name, output_tensor, highlow, output_name, True)
+                        feat_format, output_name, output_tensor, highlow, output_name)
 elif which_dataset == 'dronedetect':
     print('Loading DroneDetect Dataset')
     dataset = DroneDetectTorch(dronedetect_feat_path, feat_name, t_seg, n_per_seg, feat_format,
@@ -93,6 +93,8 @@ print("dataset loaded")
 # X_use, y_use = dataset.get_arrays()
 X_use, y_use = get_arrays_efficient(dataset, batch_size=64)
 X_perturbed, y_perturbed = get_arrays_efficient(perturbed_dataset, batch_size=64)
+
+print("ARE WE EVEN PERTURBING: ", np.allclose(X_use, X_perturbed, atol=1e-5))
 
 # X_tmp, y_tmp = dataset.get_arrays()
 
