@@ -145,7 +145,7 @@ highlow = 'L'
 dataset = DroneRFTorch(dronerf_feat_path, feat_name, t_seg, n_per_seg,
                     feat_format, output_name, output_tensor, highlow)
 perturbed_dataset = DroneRFTorchPerturbed(dronerf_feat_path, feat_name, t_seg, n_per_seg,
-                    feat_format, output_name, output_tensor, highlow, power_ratio, output_name)
+                    feat_format, output_name, output_tensor, highlow, output_name, power_ratio)
 print("dataset loaded")
 # X_use, y_use = dataset.get_arrays()
 X, Y = get_arrays_efficient(dataset, batch_size=64)
