@@ -109,6 +109,10 @@ def process_and_save_incrementally(checkpoint_dir='/home/zebra/shriniwas/checkpo
             tiled_array = tiled_array[:len(rf_data_l)]
         
         # Add to the target array
+        current_ratio = np.linalg.norm(tiled_array) / np.linalg.norm(rf_data_l)
+        desired_ratio = 0.01
+        scaling_factor = desired_ratio / current_ratio
+        tiled_array = tiled_array * scaling_factor
         rf_data_l = rf_data_l + tiled_array
         ############ PERTURBED!
 
