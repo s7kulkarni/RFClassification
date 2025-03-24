@@ -94,7 +94,7 @@ print("dataset loaded")
 X_use, y_use = get_arrays_efficient(dataset, batch_size=64)
 X_perturbed, y_perturbed = get_arrays_efficient(perturbed_dataset, batch_size=64)
 
-print("ARE WE EVEN PERTURBING: ", np.allclose(X_use, X_perturbed, atol=1e-5))
+print("ARE WE EVEN PERTURBING: ", not np.allclose(X_use, X_perturbed, atol=1e-8))
 
 # X_tmp, y_tmp = dataset.get_arrays()
 
