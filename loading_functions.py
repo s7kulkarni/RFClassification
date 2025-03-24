@@ -182,6 +182,7 @@ class DroneRFTorchPerturbed(Dataset):
         if feat_name == 'RAW':
             sub_folder_name = feat_format+'_'+feat_name+'_'+str(10000)+'_'+str(seg_len)+'/'
         else:
+            print(type, power_ratio, feat_format+'_'+feat_name+'_'+highlow+'_'+str(n_per_seg)+'_'+str(seg_len)+'_'+'PERTURBED'+'_'+type+'_'+power_ratio+'/')
             sub_folder_name = feat_format+'_'+feat_name+'_'+highlow+'_'+str(n_per_seg)+'_'+str(seg_len)+'_'+'PERTURBED'+'_'+type+'_'+power_ratio+'/'
         self.dir_name = feat_folder+sub_folder_name
         print(self.dir_name)
