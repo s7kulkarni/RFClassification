@@ -172,7 +172,7 @@ def is_interference(file_name, int_list):
 ### 2. DroneRF DATASET ### 
 class DroneRFTorchPerturbed(Dataset):
 #     feat_folder, feat_name, seg_len, n_per_seg, highlow, output_feat
-     def __init__(self, feat_folder, feat_name, seg_len, n_per_seg, feat_format, output_feat, output_tensor, highlow, to_norm=False, type='bi', power_ratio='0004'):
+     def __init__(self, feat_folder, feat_name, seg_len, n_per_seg, feat_format, output_feat, output_tensor, highlow, power_ratio, to_norm=False, type='bi'):
         self.feat_format = feat_format
         self.output_feat = output_feat
         self.output_tensor = output_tensor
