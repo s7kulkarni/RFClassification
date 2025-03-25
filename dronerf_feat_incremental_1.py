@@ -16,7 +16,7 @@ n_per_seg = 4096 # length of each segment (powers of 2)
 n_overlap_spec = 120
 win_type = 'hamming' # make ends of each segment match
 high_low = 'L' #'L', 'H' # high or low range of frequency
-arr_psd_folder = "ARR_PSD_"+high_low+'_'+str(n_per_seg)+"_"+str(t_seg)+"_"+"PERTURBED"+"_"+"drones"+"_"+"001"+"/"
+arr_psd_folder = "ARR_PSD_"+high_low+'_'+str(n_per_seg)+"_"+str(t_seg)+"_"+"PERTURBED"+"_"+"drones"+"_"+"05"+"/"
 perturbation_filepath = "/home/zebra/shriniwas/RFClassification/four_class_perturbation_001.npy"
 main_folder = dronerf_raw_path
 
@@ -110,7 +110,7 @@ def process_and_save_incrementally(checkpoint_dir='/home/zebra/shriniwas/checkpo
         
         # Add to the target array
         current_ratio = np.linalg.norm(tiled_array) / np.linalg.norm(rf_data_l)
-        desired_ratio = 0.01
+        desired_ratio = 0.5
         scaling_factor = desired_ratio / current_ratio
         tiled_array = tiled_array * scaling_factor
         rf_data_l = rf_data_l + tiled_array
