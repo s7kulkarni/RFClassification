@@ -152,6 +152,10 @@ X, Y = get_arrays_efficient(dataset, batch_size=64)
 X_perturbed, Y_perturbed = get_arrays_efficient(perturbed_dataset, batch_size=64)
 print("SHAPES ", X.shape, Y.shape, X_perturbed.shape, Y_perturbed.shape)
 
+## RAND X_PERT ##
+max_value = np.max(X)
+X_perturbed = np.random.uniform(0, max_value, size=X.shape)
+
 # ################# DUMMY DATA
 # def generate_dummy_data(num_samples=10, num_features=2049):
 #     """
