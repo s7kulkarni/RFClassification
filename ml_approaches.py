@@ -159,8 +159,8 @@ for fold, (train_idx, test_idx) in enumerate(skf.split(X_use, y_use)):
 
     # Few-shot learning: Select `n_samples_per_class` for each class
     few_shot_train_indices = []
-    for class_label in torch.unique(Y_train):
-        class_indices = torch.where(Y_train == class_label)[0]
+    for class_label in np.unique(Y_train):
+        class_indices = np.where(Y_train == class_label)[0]
         selected_indices = np.random.choice(class_indices, size=n_samples_per_class, replace=False)
         few_shot_train_indices.extend(selected_indices)
 
