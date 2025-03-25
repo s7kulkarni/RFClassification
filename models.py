@@ -65,6 +65,7 @@ class PsdSVM():
 #             t_batch_avg = t_dur/len(y_pred)
             
                         # predict on the test data (by each sample)
+            print("TEST DATAPOINTS # = ", len(test_ix))
             y_pred, t_indiv = atomic_benchmark_estimator(svc, X_p[test_ix], output_type=y.dtype, verbose=False)
             t_indiv_avg = np.mean(t_indiv)
             t_inf = t_indiv_avg # inference time
