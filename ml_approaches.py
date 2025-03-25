@@ -17,6 +17,7 @@ from sklearn.model_selection import GridSearchCV
 from sklearn.metrics import accuracy_score
 from sklearn.metrics import f1_score
 from sklearn.linear_model import LogisticRegression
+from sklearn.model_selection import StratifiedKFold
 import torch
 from torch.utils.data import DataLoader
 
@@ -140,6 +141,28 @@ k_fold=5
 
 # accs, f1s, runts, best_params = model.run_gridsearch(X_use, y_use, parameters, k_fold)
 accs, f1s, runts, best_params = model.run_gridsearch_perturbed(X_use, y_use, X_perturbed, y_perturbed, parameters, k_fold)
+
+#################################### MY OWN TESTING ########################################
+# Store accuracy for each fold
+fold_accuracies = []
+# K-Fold Cross-Validation
+k_folds = 5  # You can change this
+skf = StratifiedKFold(n_splits=k_folds, shuffle=True, random_state=42)
+
+for fold, (train_idx, test_idx) in enumerate(skf.split(X_use, y_use)):
+    print(f"Fold {fold + 1}/{k_folds}")
+    # Split data into train and test sets for this fold
+    X_train, X_test = X_use[train_idx], X_use[test_idx]
+    Y_train, Y_test = y_use[train_idx], y_use[test_idx]
+    svc = svm.SVC(kernel='rbf', C=8, gamma = 512, class_weight='balanced')
+    svc.fit(X_train, Y_train)
+    Y_pred = svc.predict(X_test)
+    accuracy = accuracy_score(Y_test, Y_pred)
+    print(f"Fold {fold + 1} Accuracy: {accuracy:.4f}")
+    fold_accuracies.append(accuracy)
+
+print(f"Average Accuracy: {np.mean(fold_accuracies):.4f}")
+#################################### MY OWN TESTING DONE ########################################
 
 """### Visualize Results"""
 
