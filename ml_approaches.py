@@ -154,7 +154,7 @@ for fold, (train_idx, test_idx) in enumerate(skf.split(X_use, y_use)):
     # Split data into train and test sets for this fold
     X_train, X_test = X_use[train_idx], X_use[test_idx]
     Y_train, Y_test = y_use[train_idx], y_use[test_idx]
-    svc = svm.SVC(kernel='rbf', C=8, gamma = 512, class_weight='balanced')
+    svc = svm.SVC(kernel='rbf', C=512, gamma = 8, class_weight='balanced')
     svc.fit(X_train, Y_train)
     Y_pred = svc.predict(X_test)
     accuracy = accuracy_score(Y_test, Y_pred)
