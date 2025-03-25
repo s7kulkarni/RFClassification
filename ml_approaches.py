@@ -147,6 +147,7 @@ accs, f1s, runts, best_params = model.run_gridsearch_perturbed(X_use, y_use, X_p
 fold_accuracies = []
 # K-Fold Cross-Validation
 k_folds = 5  # You can change this
+n_samples_per_class = 5
 skf = StratifiedKFold(n_splits=k_folds, shuffle=True, random_state=42)
 
 for fold, (train_idx, test_idx) in enumerate(skf.split(X_use, y_use)):
@@ -155,9 +156,22 @@ for fold, (train_idx, test_idx) in enumerate(skf.split(X_use, y_use)):
     X_train, X_test = X_use[train_idx], X_use[test_idx]
     Y_train, Y_test = y_use[train_idx], y_use[test_idx]
     svc = svm.SVC(kernel='rbf', C=8, gamma = 512, class_weight='balanced')
+
+    # Few-shot learning: Select `n_samples_per_class` for each class
+    few_shot_train_indices = []
+    for class_label in torch.unique(Y_train):
+        class_indices = torch.where(Y_train == class_label)[0]
+        selected_indices = np.random.choice(class_indices, size=n_samples_per_class, replace=False)
+        few_shot_train_indices.extend(selected_indices)
+
+    # Use only the selected few-shot samples for training
+    X_train = X_train[few_shot_train_indices]
+    Y_train = Y_train[few_shot_train_indices]
+
+
     svc.fit(X_train, Y_train)
-    Y_pred = svc.predict(X_test)
-    accuracy = accuracy_score(Y_pred, Y_test)
+    Y_pred = svc.predict(X_perturbed[test_idx])
+    accuracy = accuracy_score(Y_pred, y_perturbed[test_idx])
     print(f"Fold {fold + 1} Accuracy: {accuracy:.4f}")
     fold_accuracies.append(accuracy)
 
