@@ -96,6 +96,10 @@ X_perturbed, y_perturbed = get_arrays_efficient(perturbed_dataset, batch_size=64
 
 print("ARE WE EVEN PERTURBING: ", not np.all(np.equal(X_use, X_perturbed)))
 
+## RAND X_PERT ##
+max_value = np.max(X_use)
+X_perturbed = np.random.uniform(0, max_value, size=X_use.shape)
+
 # X_tmp, y_tmp = dataset.get_arrays()
 
 # print("all shapes", X_use.shape, y_use.shape, X_tmp.shape, y_tmp.shape)
