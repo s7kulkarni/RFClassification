@@ -16,7 +16,7 @@ n_per_seg = 4096 # length of each segment (powers of 2)
 n_overlap_spec = 120
 win_type = 'hamming' # make ends of each segment match
 high_low = 'L' #'L', 'H' # high or low range of frequency
-arr_psd_folder = "ARR_PSD_"+high_low+'_'+str(n_per_seg)+"_"+str(t_seg)+"_"+"PERTURBED"+"_"+"bi"+"_"+"05"+"/"
+arr_psd_folder = "ARR_PSD_"+high_low+'_'+str(n_per_seg)+"_"+str(t_seg)+"_"+"PERTURBED"+"_"+"bi"+"_"+"02"+"/"
 perturbation_filepath = "/home/zebra/shriniwas/RFClassification/two_class_perturbation_001.npy"
 main_folder = dronerf_raw_path
 
@@ -113,7 +113,7 @@ def process_and_save_incrementally(checkpoint_dir='/home/zebra/shriniwas/checkpo
         # print("ARE ORIG N PERTURBED CLOSE?", np.allclose(rf_data_l, rf_data_l + tiled_array, atol=1e-5))
         # print("NORM RATIO", np.linalg.norm(tiled_array)/np.linalg.norm(rf_data_l))
         current_ratio = np.linalg.norm(tiled_array) / np.linalg.norm(rf_data_l)
-        desired_ratio = 0.5
+        desired_ratio = 0.2
         scaling_factor = desired_ratio / current_ratio
         tiled_array = tiled_array * scaling_factor
         rf_data_l = rf_data_l + tiled_array
