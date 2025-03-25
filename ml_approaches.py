@@ -92,13 +92,14 @@ elif which_dataset == 'dronedetect':
 print("dataset loaded")
 # X_use, y_use = dataset.get_arrays()
 X_use, y_use = get_arrays_efficient(dataset, batch_size=64)
-X_perturbed, y_perturbed = get_arrays_efficient(perturbed_dataset, batch_size=64)
+# X_perturbed, y_perturbed = get_arrays_efficient(perturbed_dataset, batch_size=64)
 
-print("ARE WE EVEN PERTURBING: ", not np.all(np.equal(X_use, X_perturbed)))
+# print("ARE WE EVEN PERTURBING: ", not np.all(np.equal(X_use, X_perturbed)))
 
 ## RAND X_PERT ##
 max_value = np.max(X_use)
 X_perturbed = np.random.uniform(0, max_value, size=X_use.shape)
+y_perturbed = y_use
 
 # X_tmp, y_tmp = dataset.get_arrays()
 
