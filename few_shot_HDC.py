@@ -229,8 +229,8 @@ for fold, (train_idx, test_idx) in enumerate(skf.split(X_tensor, Y_tensor)):
         few_shot_train_indices.extend(selected_indices)
 
     # Use only the selected few-shot samples for training
-    X_train = X_train[few_shot_train_indices]
-    Y_train = Y_train[few_shot_train_indices]
+    # X_train = X_train[few_shot_train_indices]
+    # Y_train = Y_train[few_shot_train_indices]
 
     # Create DataLoader for training and testing
     train_dataset = torch.utils.data.TensorDataset(X_train, Y_train)
