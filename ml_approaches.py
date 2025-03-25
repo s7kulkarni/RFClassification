@@ -73,7 +73,7 @@ t_seg = 250 #ms
 n_per_seg = 4096
 interferences = ['WIFI', 'BLUE', 'BOTH', 'CLEAN']
 output_name = 'bi'
-power_ratio = '0004' # 0.xxx mapped to xxx
+norm_ratio = '0.001' # 0.xxx mapped to xxx
 feat_format = 'ARR'
 which_dataset = 'dronerf'
 output_tensor = False
@@ -84,7 +84,7 @@ if which_dataset == 'dronerf':
     dataset = DroneRFTorch(dronerf_feat_path, feat_name, t_seg, n_per_seg,
                        feat_format, output_name, output_tensor, highlow)
     perturbed_dataset = DroneRFTorchPerturbed(dronerf_feat_path, feat_name, t_seg, n_per_seg,
-                        feat_format, output_name, output_tensor, highlow, output_name)
+                        feat_format, output_name, output_tensor, highlow, norm_ratio, output_name)
 elif which_dataset == 'dronedetect':
     print('Loading DroneDetect Dataset')
     dataset = DroneDetectTorch(dronedetect_feat_path, feat_name, t_seg, n_per_seg, feat_format,
