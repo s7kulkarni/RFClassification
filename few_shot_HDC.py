@@ -149,13 +149,13 @@ perturbed_dataset = DroneRFTorchPerturbed(dronerf_feat_path, feat_name, t_seg, n
 print("dataset loaded")
 # X_use, y_use = dataset.get_arrays()
 X, Y = get_arrays_efficient(dataset, batch_size=64)
-# X_perturbed, Y_perturbed = get_arrays_efficient(perturbed_dataset, batch_size=64)
-# print("SHAPES ", X.shape, Y.shape, X_perturbed.shape, Y_perturbed.shape)
+X_perturbed, Y_perturbed = get_arrays_efficient(perturbed_dataset, batch_size=64)
+print("SHAPES ", X.shape, Y.shape, X_perturbed.shape, Y_perturbed.shape)
 
 ## RAND X_PERT ##
-max_value = np.max(X)
-X_perturbed = np.random.uniform(0, max_value, size=X.shape)
-Y_perturbed = copy.deepcopy(Y)
+# max_value = np.max(X)
+# X_perturbed = np.random.uniform(0, max_value, size=X.shape)
+# Y_perturbed = copy.deepcopy(Y)
 # ################# DUMMY DATA
 # def generate_dummy_data(num_samples=10, num_features=2049):
 #     """
@@ -234,7 +234,7 @@ for fold, (train_idx, test_idx) in enumerate(skf.split(X_tensor, Y_tensor)):
 
     # Create DataLoader for training and testing
     train_dataset = torch.utils.data.TensorDataset(X_train, Y_train)
-    test_dataset = torch.utils.data.TensorDataset(X_perturbed, Y_perturbed)
+    test_dataset = torch.utils.data.TensorDataset(X_perturbed[test_idx], Y_perturbed[test_idx])
 
     train_ld = torch.utils.data.DataLoader(train_dataset, batch_size=1, shuffle=True)
     test_ld = torch.utils.data.DataLoader(test_dataset, batch_size=1, shuffle=False)
