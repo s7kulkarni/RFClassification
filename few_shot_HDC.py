@@ -234,7 +234,7 @@ for fold, (train_idx, test_idx) in enumerate(skf.split(X_tensor, Y_tensor)):
 
     # Create DataLoader for training and testing
     train_dataset = torch.utils.data.TensorDataset(X_train, Y_train)
-    test_dataset = torch.utils.data.TensorDataset(X_perturbed[test_idx], Y_perturbed[test_idx])
+    test_dataset = torch.utils.data.TensorDataset(X_test, Y_test)
 
     train_ld = torch.utils.data.DataLoader(train_dataset, batch_size=1, shuffle=True)
     test_ld = torch.utils.data.DataLoader(test_dataset, batch_size=1, shuffle=False)
