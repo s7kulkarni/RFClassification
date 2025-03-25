@@ -156,8 +156,8 @@ for fold, (train_idx, test_idx) in enumerate(skf.split(X_use, y_use)):
     Y_train, Y_test = y_use[train_idx], y_use[test_idx]
     svc = svm.SVC(kernel='rbf', C=512, gamma = 8, class_weight='balanced')
     svc.fit(X_train, Y_train)
-    Y_pred = svc.predict(X_test)
-    accuracy = accuracy_score(X_perturbed[test_idx], y_perturbed[test_idx])
+    Y_pred = svc.predict(X_perturbed[test_idx])
+    accuracy = accuracy_score(Y_pred, y_perturbed[test_idx])
     print(f"Fold {fold + 1} Accuracy: {accuracy:.4f}")
     fold_accuracies.append(accuracy)
 
