@@ -95,7 +95,7 @@ print("dataset loaded")
 X_use, y_use = get_arrays_efficient(dataset, batch_size=64)
 X_perturbed, y_perturbed = get_arrays_efficient(perturbed_dataset, batch_size=64)
 
-print("ARE WE EVEN PERTURBING: ", not np.all(np.equal(X_use, X_perturbed)))
+print("ARE WE EVEN PERTURBING: ", not np.allclose(X_use, X_perturbed, atoi=1e-5))
 
 ## RAND X_PERT ##
 # max_value = np.max(X_use)
