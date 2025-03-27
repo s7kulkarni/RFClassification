@@ -155,7 +155,7 @@ for fold, (train_idx, test_idx) in enumerate(skf.split(X_use, y_use)):
     # Split data into train and test sets for this fold
     X_train, X_test = X_use[train_idx], X_use[test_idx]
     Y_train, Y_test = y_use[train_idx], y_use[test_idx]
-    svc = svm.SVC(kernel='rbf', C=8, gamma = 512, class_weight='balanced') # 1, scale
+    svc = svm.SVC(kernel='rbf', C=1, gamma = 'scale', class_weight='balanced') # 8, 512
 
     # Few-shot learning: Select `n_samples_per_class` for each class
     few_shot_train_indices = []
@@ -165,8 +165,8 @@ for fold, (train_idx, test_idx) in enumerate(skf.split(X_use, y_use)):
         few_shot_train_indices.extend(selected_indices)
 
     # Use only the selected few-shot samples for training
-    # X_train = X_train[few_shot_train_indices]
-    # Y_train = Y_train[few_shot_train_indices]
+    X_train = X_train[few_shot_train_indices]
+    Y_train = Y_train[few_shot_train_indices]
 
 
     svc.fit(X_train, Y_train)
