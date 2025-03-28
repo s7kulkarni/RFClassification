@@ -105,6 +105,7 @@ def compute_min_max_streaming(main_folder, t_seg, chunk_size=1000, checkpoint_fi
         # Resume from last checkpoint
         if chunk_idx < start_index:
             continue
+        print("Staeting/Resuming from chunk ", chunk_idx)
 
         if min_vals is None:
             min_vals = np.min(X_chunk, axis=(0, 2), keepdims=True)
