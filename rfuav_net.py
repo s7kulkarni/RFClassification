@@ -44,30 +44,97 @@ from loading_functions import *
 
 from loading_functions import load_dronerf_raw_stream
 
-def compute_min_max_streaming(main_folder, t_seg, chunk_size=1000):
+# def compute_min_max_streaming(main_folder, t_seg, chunk_size=1000):
+#     """
+#     Compute min/max values in a streaming fashion to avoid memory overload.
+#     Also determine the full dataset shape.
+#     """
+#     min_vals = None
+#     max_vals = None
+#     total_samples = 0
+#     first_chunk_shape = None
+    
+#     data_gen = load_dronerf_raw_stream(main_folder, t_seg, chunk_size=chunk_size, stream=True)  # Streaming loader
+
+#     for X_chunk, _, _, _ in data_gen:
+#         if min_vals is None:
+#             min_vals = np.min(X_chunk, axis=(0, 2), keepdims=True)
+#             max_vals = np.max(X_chunk, axis=(0, 2), keepdims=True)
+#             first_chunk_shape = X_chunk.shape[1:]  # Store feature dimensions (excluding batch size)
+#         else:
+#             min_vals = np.minimum(min_vals, np.min(X_chunk, axis=(0, 2), keepdims=True))
+#             max_vals = np.maximum(max_vals, np.max(X_chunk, axis=(0, 2), keepdims=True))
+
+#         total_samples += X_chunk.shape[0]  # Track total number of samples
+
+#     dataset_shape = (total_samples,) + first_chunk_shape  # Construct final dataset shape
+#     return min_vals, max_vals, dataset_shape
+
+def compute_min_max_streaming(main_folder, t_seg, chunk_size=1000, checkpoint_file="/home/zebra/shriniwas/RFUAV/min_max_checkpoint.npz"):
     """
     Compute min/max values in a streaming fashion to avoid memory overload.
-    Also determine the full dataset shape.
+    Also determine the full dataset shape. Supports checkpointing.
     """
+    # If checkpoint exists, load and return immediately
+    if os.path.exists(checkpoint_file):
+        checkpoint_data = np.load(checkpoint_file)
+        if "dataset_shape" in checkpoint_data:  # Ensure it was fully computed
+            print("Min/Max values and dataset shape already computed. Loading from checkpoint.")
+            return (checkpoint_data["min_vals"], 
+                    checkpoint_data["max_vals"], 
+                    tuple(checkpoint_data["dataset_shape"]))  # Convert to tuple for consistency
+
     min_vals = None
     max_vals = None
     total_samples = 0
     first_chunk_shape = None
-    
-    data_gen = load_dronerf_raw_stream(main_folder, t_seg, chunk_size=chunk_size, stream=True)  # Streaming loader
+    start_index = 0  # Track last processed chunk
 
-    for X_chunk, _, _, _ in data_gen:
+    # Load partial checkpoint if available
+    if os.path.exists(checkpoint_file):
+        checkpoint_data = np.load(checkpoint_file)
+        min_vals = checkpoint_data["min_vals"]
+        max_vals = checkpoint_data["max_vals"]
+        total_samples = int(checkpoint_data["total_samples"])
+        first_chunk_shape = tuple(checkpoint_data["first_chunk_shape"])
+        start_index = int(checkpoint_data["start_index"])  # Resume from this chunk
+
+    data_gen = load_dronerf_raw_stream(main_folder, t_seg, chunk_size=chunk_size, stream=True)
+
+    for chunk_idx, (X_chunk, _, _, _) in enumerate(data_gen):
+        # Resume from last checkpoint
+        if chunk_idx < start_index:
+            continue
+
         if min_vals is None:
             min_vals = np.min(X_chunk, axis=(0, 2), keepdims=True)
             max_vals = np.max(X_chunk, axis=(0, 2), keepdims=True)
-            first_chunk_shape = X_chunk.shape[1:]  # Store feature dimensions (excluding batch size)
+            first_chunk_shape = X_chunk.shape[1:]  # Store feature dimensions
         else:
             min_vals = np.minimum(min_vals, np.min(X_chunk, axis=(0, 2), keepdims=True))
             max_vals = np.maximum(max_vals, np.max(X_chunk, axis=(0, 2), keepdims=True))
 
-        total_samples += X_chunk.shape[0]  # Track total number of samples
+        total_samples += X_chunk.shape[0]
 
-    dataset_shape = (total_samples,) + first_chunk_shape  # Construct final dataset shape
+        # Save progress to checkpoint
+        np.savez(checkpoint_file, 
+                 min_vals=min_vals, 
+                 max_vals=max_vals, 
+                 total_samples=total_samples,
+                 first_chunk_shape=np.array(first_chunk_shape),
+                 start_index=chunk_idx + 1)
+
+    dataset_shape = (total_samples,) + first_chunk_shape  # Final dataset shape
+
+    # Save final shape in checkpoint
+    np.savez(checkpoint_file, 
+             min_vals=min_vals, 
+             max_vals=max_vals, 
+             total_samples=total_samples,
+             first_chunk_shape=np.array(first_chunk_shape),
+             start_index=start_index,
+             dataset_shape=np.array(dataset_shape))  # Store as array for saving
+
     return min_vals, max_vals, dataset_shape
 
 # def normalize_data_memmap(main_folder, t_seg, min_vals, max_vals, output_path, dataset_shape, chunk_size=1000):
@@ -100,7 +167,7 @@ def compute_min_max_streaming(main_folder, t_seg, chunk_size=1000):
 
 #     return Xs_norm, ys_arr, y4s_arr, y10s_arr
 
-def normalize_data_memmap(main_folder, t_seg, min_vals, max_vals, output_path, labels_output_path, dataset_shape, chunk_size=1000, checkpoint_file='checkpoint.txt'):
+def normalize_data_memmap(main_folder, t_seg, min_vals, max_vals, output_path, labels_output_path, dataset_shape, chunk_size=1000, checkpoint_file='/home/zebra/shriniwas/RFUAV/checkpoint.txt'):
     """
     Normalize data in a memory-mapped fashion, avoiding full memory load.
     Includes checkpointing to resume if interrupted.
@@ -156,7 +223,7 @@ output_path = '/home/zebra/shriniwas/RFUAV/normalized_x.dat'
 labels_output_path = ['/home/zebra/shriniwas/RFUAV/ys.dat',
                       '/home/zebra/shriniwas/RFUAV/y4s.dat',
                       '/home/zebra/shriniwas/RFUAV/y10s.dat']
-Xs_norm, ys_arr, y4s_arr, y10s_arr = normalize_data_memmap(main_folder, t_seg, min_vals, max_vals, output_path, dataset_shape)
+Xs_norm, ys_arr, y4s_arr, y10s_arr = normalize_data_memmap(main_folder, t_seg, min_vals, max_vals, output_path, labels_output_path, dataset_shape)
 
 dataset = DroneData(Xs_norm, y10s_arr)  # Assume y10s_arr is loaded correctly
 
