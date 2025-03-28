@@ -42,33 +42,125 @@ import loading_functions
 importlib.reload(loading_functions)
 from loading_functions import *
 
-## Import data -  Drone RF
+from loading_functions import load_dronerf_raw_stream
+
+def compute_min_max_streaming(main_folder, t_seg, chunk_size=1000):
+    """
+    Compute min/max values in a streaming fashion to avoid memory overload.
+    Also determine the full dataset shape.
+    """
+    min_vals = None
+    max_vals = None
+    total_samples = 0
+    first_chunk_shape = None
+    
+    data_gen = load_dronerf_raw_stream(main_folder, t_seg, chunk_size=chunk_size, stream=True)  # Streaming loader
+
+    for X_chunk, _, _, _ in data_gen:
+        if min_vals is None:
+            min_vals = np.min(X_chunk, axis=(0, 2), keepdims=True)
+            max_vals = np.max(X_chunk, axis=(0, 2), keepdims=True)
+            first_chunk_shape = X_chunk.shape[1:]  # Store feature dimensions (excluding batch size)
+        else:
+            min_vals = np.minimum(min_vals, np.min(X_chunk, axis=(0, 2), keepdims=True))
+            max_vals = np.maximum(max_vals, np.max(X_chunk, axis=(0, 2), keepdims=True))
+
+        total_samples += X_chunk.shape[0]  # Track total number of samples
+
+    dataset_shape = (total_samples,) + first_chunk_shape  # Construct final dataset shape
+    return min_vals, max_vals, dataset_shape
+
+# def normalize_data_memmap(main_folder, t_seg, min_vals, max_vals, output_path, dataset_shape, chunk_size=1000):
+#     """
+#     Normalize data in a memory-mapped fashion, avoiding full memory load.
+#     Also returns the corresponding labels.
+#     """
+#     data_gen = load_dronerf_raw_stream(main_folder, t_seg, chunk_size=chunk_size, stream=True)
+    
+#     Xs_norm = np.memmap(output_path, dtype=np.float32, mode='w+', shape=dataset_shape)
+
+#     ys_list = []
+#     y4s_list = []
+#     y10s_list = []
+
+#     idx = 0
+#     for X_chunk, ys_chunk, y4s_chunk, y10s_chunk in data_gen:
+#         norm_chunk = (X_chunk - min_vals) / (max_vals - min_vals)
+#         Xs_norm[idx:idx + X_chunk.shape[0]] = norm_chunk
+#         idx += X_chunk.shape[0]
+
+#         ys_list.append(ys_chunk)
+#         y4s_list.append(y4s_chunk)
+#         y10s_list.append(y10s_chunk)
+
+#     # Concatenate labels into arrays
+#     ys_arr = np.concatenate(ys_list, axis=0)
+#     y4s_arr = np.concatenate(y4s_list, axis=0)
+#     y10s_arr = np.concatenate(y10s_list, axis=0)
+
+#     return Xs_norm, ys_arr, y4s_arr, y10s_arr
+
+def normalize_data_memmap(main_folder, t_seg, min_vals, max_vals, output_path, labels_output_path, dataset_shape, chunk_size=1000, checkpoint_file='checkpoint.txt'):
+    """
+    Normalize data in a memory-mapped fashion, avoiding full memory load.
+    Includes checkpointing to resume if interrupted.
+    Stores processed data and labels incrementally.
+    """
+    # Check if there's a checkpoint file to resume from
+    start_index = 0
+    if os.path.exists(checkpoint_file):
+        with open(checkpoint_file, 'r') as f:
+            start_index = int(f.read().strip())  # Read last processed chunk index
+    
+    data_gen = load_dronerf_raw_stream(main_folder, t_seg, chunk_size=chunk_size, stream=True)
+    
+    # Get the full shape for the memmap files
+    Xs_norm = np.memmap(output_path, dtype=np.float32, mode='w+', shape=dataset_shape)  # For normalized features
+    
+    # Assuming ys, y4s, y10s have the same shape as Xs for labeling
+    ys_shape = (dataset_shape[0],)
+    y4s_shape = (dataset_shape[0],)
+    y10s_shape = (dataset_shape[0],)
+    
+    ys_memmap = np.memmap(labels_output_path[0], dtype=np.int32, mode='w+', shape=ys_shape)
+    y4s_memmap = np.memmap(labels_output_path[1], dtype=np.int32, mode='w+', shape=y4s_shape)
+    y10s_memmap = np.memmap(labels_output_path[2], dtype=np.int32, mode='w+', shape=y10s_shape)
+    
+    idx = 0
+    for chunk_idx, (X_chunk, ys_chunk, y4s_chunk, y10s_chunk) in enumerate(data_gen):
+        # Skip processed chunks if resuming
+        if chunk_idx < start_index:
+            continue
+        
+        # Normalize the chunk and store in memory-mapped file
+        norm_chunk = (X_chunk - min_vals) / (max_vals - min_vals)
+        Xs_norm[idx:idx + X_chunk.shape[0]] = norm_chunk
+        ys_memmap[idx:idx + ys_chunk.shape[0]] = ys_chunk
+        y4s_memmap[idx:idx + y4s_chunk.shape[0]] = y4s_chunk
+        y10s_memmap[idx:idx + y10s_chunk.shape[0]] = y10s_chunk
+        
+        idx += X_chunk.shape[0]
+        
+        # Save progress by updating the checkpoint file
+        with open(checkpoint_file, 'w') as f:
+            f.write(str(chunk_idx + 1))  # Save the index of the next chunk to process
+    
+    return Xs_norm, ys_memmap, y4s_memmap, y10s_memmap
+
+# Main execution
 main_folder = '/home/zebra/shriniwas/DroneRF_extracted/'
-t_seg = 0.25 #ms
-Xs_arr, ys_arr, y4s_arr, y10s_arr = load_dronerf_raw(main_folder, t_seg)
+t_seg = 0.25  # ms
 
-## Apply normalization
-L_max = np.max(Xs_arr[:,1,:])
-L_min = np.min(Xs_arr[:,1,:])
-H_max = np.max(Xs_arr[:,0,:])
-H_min = np.min(Xs_arr[:,0,:])
-Maxes = np.vstack((H_max, L_max))
-Mins = np.vstack((H_min, L_min))
+min_vals, max_vals, dataset_shape = compute_min_max_streaming(main_folder, t_seg)
+output_path = '/home/zebra/shriniwas/RFUAV/normalized_x.dat'
+labels_output_path = ['/home/zebra/shriniwas/RFUAV/ys.dat',
+                      '/home/zebra/shriniwas/RFUAV/y4s.dat',
+                      '/home/zebra/shriniwas/RFUAV/y10s.dat']
+Xs_norm, ys_arr, y4s_arr, y10s_arr = normalize_data_memmap(main_folder, t_seg, min_vals, max_vals, output_path, dataset_shape)
 
-Xs_norm = np.zeros(Xs_arr.shape)
-for ihl in range(2):
-    Xs_norm[:,ihl,:] = (Xs_arr[:,ihl,:]-Mins[ihl])/(Maxes[ihl]-Mins[ihl])
+dataset = DroneData(Xs_norm, y10s_arr)  # Assume y10s_arr is loaded correctly
 
-## check for nans in the data
-# tfall = np.isnan(y10s_arr)
-# tfall.any()
-
-"""## Load Data"""
-
-dataset = DroneData(Xs_norm, y10s_arr)
-
-print("INFO: Loaded the dataset, length is - ", len(dataset))
-
+print("INFO: Loaded the dataset, length is -", len(dataset))
 """## Model"""
 
 class RFUAVNet(nn.Module):
@@ -264,7 +356,6 @@ optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate, weight_decay=l
 
 total_step = len(train_loader)
 
-inputs.shape
 
 # Training
 # We use the pre-defined number of epochs to determine how many iterations to train the network on

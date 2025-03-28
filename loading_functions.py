@@ -415,6 +415,66 @@ class DroneRFTorch(Dataset):
 #         return None
 
     
+def load_dronerf_raw_stream(main_folder, t_seg, chunk_size=1000, stream=False):
+    high_freq_files = []
+    low_freq_files = []
+
+    for dirpath, _, filenames in os.walk(main_folder):
+        for filename in filenames:
+            full_filepath = os.path.join(dirpath, filename)
+            if 'H' in filename:
+                high_freq_files.append([filename, full_filepath])
+            elif 'L' in filename:
+                low_freq_files.append([filename, full_filepath])
+
+    high_freq_files.sort()
+    low_freq_files.sort()
+
+    fs = 40e6
+    len_seg = int(t_seg / 1e3 * fs)
+
+    def process_file_pair(h_file, l_file):
+        try:
+            rf_data_h = pd.read_csv(h_file[1], header=None).values.flatten()
+            rf_data_l = pd.read_csv(l_file[1], header=None).values.flatten()
+        except Exception as e:
+            print("EXCEPTION", e)
+            return None
+
+        if len(rf_data_h) != len(rf_data_l):
+            print('Skipping due to length mismatch:', h_file[0])
+            return None
+
+        rf_sig = np.vstack((rf_data_h, rf_data_l))
+        n_segs = len(rf_data_h) // len_seg
+        n_keep = n_segs * len_seg
+        return np.split(rf_sig[:, :n_keep], n_segs, axis=1), n_segs, int(l_file[0][0]), int(l_file[0][:3]), int(l_file[0][:5])
+
+    if stream:
+        for h_file in high_freq_files:
+            l_file = next((lf for lf in low_freq_files if lf[0][:5] + lf[0][6:] == h_file[0][:5] + h_file[0][6:]), None)
+            if not l_file:
+                continue
+            result = process_file_pair(h_file, l_file)
+            if result:
+                Xs, n_segs, y, y4, y10 = result
+                for i in range(0, len(Xs), chunk_size):
+                    yield np.array(Xs[i:i + chunk_size]), np.full(chunk_size, y), np.full(chunk_size, y4), np.full(chunk_size, y10)
+    else:
+        Xs, ys, y4s, y10s = [], [], [], []
+        for h_file in high_freq_files:
+            l_file = next((lf for lf in low_freq_files if lf[0][:5] + lf[0][6:] == h_file[0][:5] + h_file[0][6:]), None)
+            if not l_file:
+                continue
+            result = process_file_pair(h_file, l_file)
+            if result:
+                Xs_batch, n_segs, y, y4, y10 = result
+                Xs.extend(Xs_batch)
+                ys.extend([y] * len(Xs_batch))
+                y4s.extend([y4] * len(Xs_batch))
+                y10s.extend([y10] * len(Xs_batch))
+        return np.array(Xs), np.array(ys), np.array(y4s), np.array(y10s)
+
     
 # function to load drone rf data raw in array form
 def load_dronerf_raw(main_folder, t_seg):
