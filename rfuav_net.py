@@ -179,16 +179,26 @@ def normalize_data_memmap(main_folder, t_seg, min_vals, max_vals, output_path, l
     if os.path.exists(checkpoint_file):
         with open(checkpoint_file, 'r') as f:
             start_index = int(f.read().strip())  # Read last processed chunk index
-    
-    data_gen = load_dronerf_raw_stream(main_folder, t_seg, chunk_size=chunk_size, stream=True)
-    
-    # Get the full shape for the memmap files
-    Xs_norm = np.memmap(output_path, dtype=np.float32, mode='w+', shape=dataset_shape)  # For normalized features
-    
+
     # Assuming ys, y4s, y10s have the same shape as Xs for labeling
     ys_shape = (dataset_shape[0],)
     y4s_shape = (dataset_shape[0],)
     y10s_shape = (dataset_shape[0],)
+    
+    # Check if processing is already complete
+    if start_index >= dataset_shape[0]:
+        print("Checkpoint indicates processing is complete. Loading memmaps directly.")
+        Xs_norm = np.memmap(output_path, dtype=np.float32, mode='r', shape=dataset_shape)
+        ys_memmap = np.memmap(labels_output_path[0], dtype=np.int32, mode='r', shape=ys_shape)
+        y4s_memmap = np.memmap(labels_output_path[1], dtype=np.int32, mode='r', shape=y4s_shape)
+        y10s_memmap = np.memmap(labels_output_path[2], dtype=np.int32, mode='r', shape=y10s_shape)
+    
+        return Xs_norm, ys_memmap, y4s_memmap, y10s_memmap  # Return without reprocessing
+
+    data_gen = load_dronerf_raw_stream(main_folder, t_seg, chunk_size=chunk_size, stream=True)
+    
+    # Get the full shape for the memmap files
+    Xs_norm = np.memmap(output_path, dtype=np.float32, mode='w+', shape=dataset_shape)  # For normalized features
     
     ys_memmap = np.memmap(labels_output_path[0], dtype=np.int32, mode='w+', shape=ys_shape)
     y4s_memmap = np.memmap(labels_output_path[1], dtype=np.int32, mode='w+', shape=y4s_shape)
