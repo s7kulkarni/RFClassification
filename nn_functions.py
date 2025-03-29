@@ -151,13 +151,12 @@ def runkfoldcv(model, dataset, device, k_folds, batch_size, learning_rate, num_e
                     instance = instance.float()
                     instance = torch.unsqueeze(instance, 0)
                     start = time.time()
-                    starter.record()
                     yi = model(instance)
                     _,pred = torch.max(yi,1)
-                    ender.record()
+                    end = time.time()
 
                     torch.cuda.synchronize()
-                    curr_time = starter.elapsed_time(ender) #miliseconds
+                    curr_time = (end - start) * 1e3
 
                     runtimes_thisfold.append(curr_time*1e-3)
                     ys[i] = pred
