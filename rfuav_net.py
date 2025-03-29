@@ -241,7 +241,7 @@ dataset = DroneData(Xs_norm, y4s_arr)  # Assume y10s_arr is loaded correctly
 
 print("INFO: Loaded the dataset, length is -", len(dataset))
 print("SHAPES ", Xs_norm.shape, ys_arr.shape)
-print("Drones labels", y4s_arr[:10], "zeros? 2,4,10 ", np.all(ys_arr == 0), np.all(y4s_arr == 0), np.all(y10s_arr == 0))
+print("Drones labels", y4s_arr[:10], "zeros? x,2,4,10 ", np.all(Xs_norm == 0), np.all(ys_arr == 0), np.all(y4s_arr == 0), np.all(y10s_arr == 0))
 """## Model"""
 
 class RFUAVNet(nn.Module):
