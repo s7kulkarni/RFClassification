@@ -131,7 +131,7 @@ def runkfoldcv(model, dataset, device, k_folds, batch_size, learning_rate, num_e
         correct, total = 0, 0
         model.eval()
         with torch.no_grad():
-            starter, ender = torch.cuda.Event(enable_timing=True), torch.cuda.Event(enable_timing=True)
+            # starter, ender = torch.cuda.Event(enable_timing=True), torch.cuda.Event(enable_timing=True)
             runtimes_thisfold = []
             f1s_thisfold = []
             # Iterate over the test data and generate predictions
@@ -155,7 +155,6 @@ def runkfoldcv(model, dataset, device, k_folds, batch_size, learning_rate, num_e
                     _,pred = torch.max(yi,1)
                     end = time.time()
 
-                    torch.cuda.synchronize()
                     curr_time = (end - start) * 1e3
 
                     runtimes_thisfold.append(curr_time*1e-3)
