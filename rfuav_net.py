@@ -187,7 +187,7 @@ def normalize_data_memmap(main_folder, t_seg, min_vals, max_vals, output_path, l
     
     # Check if processing is already complete
     print("start_index, dataset_shape[0]", start_index, dataset_shape[0])
-    if start_index >= dataset_shape[0]:
+    if start_index * 1000 >= dataset_shape[0]:
         print("Checkpoint indicates processing is complete. Loading memmaps directly.")
         Xs_norm = np.memmap(output_path, dtype=np.float32, mode='r', shape=dataset_shape)
         ys_memmap = np.memmap(labels_output_path[0], dtype=np.int32, mode='r', shape=ys_shape)
