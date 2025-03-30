@@ -231,6 +231,8 @@ main_folder = '/home/zebra/shriniwas/DroneRF_extracted/'
 t_seg = 0.25  # ms
 
 min_vals, max_vals, dataset_shape = compute_min_max_streaming(main_folder, t_seg)
+print("min_vals, max_vals, dataset_shape", min_vals, max_vals, dataset_shape)
+
 output_path = '/home/zebra/shriniwas/RFUAV/normalized_x.dat'
 labels_output_path = ['/home/zebra/shriniwas/RFUAV/ys.dat',
                       '/home/zebra/shriniwas/RFUAV/y4s.dat',
