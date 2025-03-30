@@ -239,7 +239,7 @@ labels_output_path = ['/home/zebra/shriniwas/RFUAV/ys.dat',
                       '/home/zebra/shriniwas/RFUAV/y10s.dat']
 Xs_norm, ys_arr, y4s_arr, y10s_arr = normalize_data_memmap(main_folder, t_seg, min_vals, max_vals, output_path, labels_output_path, dataset_shape)
 
-dataset = DroneData(Xs_norm, y4s_arr)  # Assume y10s_arr is loaded correctly
+dataset = DroneData(Xs_norm, ys_arr)  # Assume y10s_arr is loaded correctly
 
 print("INFO: Loaded the dataset, length is -", len(dataset))
 print("SHAPES ", Xs_norm.shape, ys_arr.shape)
@@ -397,7 +397,7 @@ model = RFUAVNet(num_classes)
 # model = model.to(device)
 
 k_folds = 5
-avg_acc, mean_f1s, mean_runtime = runkfoldcv(
+avg_acc, mean_f1s, mean_f1s, mean_runtime = runkfoldcv(
     model, dataset, device, k_folds, batch_size, learning_rate, num_epochs, momentum, l2reg)
 
 """### Single fold train & test development code"""
