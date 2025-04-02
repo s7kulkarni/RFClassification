@@ -73,7 +73,7 @@ feat_name = 'PSD'
 t_seg = 250 #ms
 n_per_seg = 4096
 interferences = ['WIFI', 'BLUE', 'BOTH', 'CLEAN']
-output_name = 'drones'
+output_name = 'modes'
 norm_ratio = '04' # 0.xxx mapped to xxx
 feat_format = 'ARR'
 which_dataset = 'dronerf'
@@ -155,7 +155,7 @@ for fold, (train_idx, test_idx) in enumerate(skf.split(X_use, y_use)):
     # Split data into train and test sets for this fold
     X_train, X_test = X_use[train_idx], X_use[test_idx]
     Y_train, Y_test = y_use[train_idx], y_use[test_idx]
-    svc = svm.SVC(kernel='rbf', C=1, gamma = 'scale', class_weight='balanced') # 8, 512
+    svc = svm.SVC(kernel='rbf', C=8, gamma = 512, class_weight='balanced') # 8, 512
 
     # Few-shot learning: Select `n_samples_per_class` for each class
     few_shot_train_indices = []
@@ -165,13 +165,13 @@ for fold, (train_idx, test_idx) in enumerate(skf.split(X_use, y_use)):
         few_shot_train_indices.extend(selected_indices)
 
     # Use only the selected few-shot samples for training
-    X_train = X_train[few_shot_train_indices]
-    Y_train = Y_train[few_shot_train_indices]
+    # X_train = X_train[few_shot_train_indices]
+    # Y_train = Y_train[few_shot_train_indices]
 
 
     svc.fit(X_train, Y_train)
-    Y_pred = svc.predict(X_perturbed[test_idx])
-    accuracy = accuracy_score(Y_pred, y_perturbed[test_idx])
+    Y_pred = svc.predict(X_test)
+    accuracy = accuracy_score(Y_pred, Y_test)
     print(f"Fold {fold + 1} Accuracy: {accuracy:.4f}")
     fold_accuracies.append(accuracy)
 
