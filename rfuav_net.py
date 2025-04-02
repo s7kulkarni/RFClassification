@@ -383,7 +383,7 @@ out = net(input1)
 from nn_functions import runkfoldcv
 
 # Network Hyperparameters
-num_classes = 10
+num_classes = 4
 batch_size = 128 # 128
 learning_rate = 0.01
 num_epochs = 5 # 0
