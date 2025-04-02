@@ -355,61 +355,55 @@ class RFUAVNet(nn.Module):
         super(RFUAVNet, self).__init__()
         self.num_classes = num_classes
 
-        # Fully connected output layer (keeping 320 output size)
+        # Fully connected output layer
         self.dense = nn.Linear(320, num_classes)
         self.smax = nn.Softmax(dim=1)
 
-        # For r unit (initial conv block) - now properly handling 2D conv
-        self.conv1 = nn.Conv2d(in_channels=2, out_channels=64, kernel_size=(1,5),
-                              stride=(1,5), padding=(0,2))  # MATLAB's "same" padding
-        self.norm1 = nn.BatchNorm2d(num_features=64)
+        # For r unit (initial conv block)
+        self.conv1 = nn.Conv1d(in_channels=2, out_channels=64, kernel_size=5, stride=5, padding=2)
+        self.norm1 = nn.BatchNorm1d(num_features=64)
         self.elu1 = nn.ELU(alpha=1.0, inplace=False)
 
         # Setup for components of the gunit (group convolutions)
         self.groupconvlist = []
-        self.elu2list = []  # Removed norm2list to match MATLAB
+        self.elu2list = []
         for i in range(4):
-            conv = nn.Conv2d(
+            self.groupconvlist.append(nn.Conv1d(
                 in_channels=64,
                 out_channels=64,
-                kernel_size=(1,3),
-                stride=(1,2),
-                groups=8,  # This matches MATLAB's nGroups=8
-                padding=(0,1)  # "same" padding
-            )
-            self.groupconvlist.append(conv)
+                kernel_size=3,
+                stride=2,
+                groups=8,
+                padding=1  # Changed to symmetric padding
+            ))
             self.elu2list.append(nn.ELU(alpha=1.0, inplace=False))
         self.groupconv = nn.ModuleList(self.groupconvlist)
         self.elu2 = nn.ModuleList(self.elu2list)
 
-        # Global average pooling (adjusted for 2D)
-        self.gapool = nn.AdaptiveAvgPool2d(1)
-
-        # Additional layers (removed norms to match MATLAB)
-        self.add_layers = nn.ModuleList([nn.ModuleList([self.groupconv[i], self.elu2[i]]) 
-                                      for i in range(4)])
+        # Global average pooling
+        self.gapool = nn.AdaptiveAvgPool1d(1)
 
     def forward(self, x):
-        # Add dummy dimension to match MATLAB's [1,10000,2] format
-        x = x.unsqueeze(2)  # (batch, 2, 10000) -> (batch, 2, 1, 10000)
-        
-        # Rest of forward pass remains structurally identical
+        # runit first (initial conv block)
         x1 = self.runit(x)
 
-        # gunit processing (adjusted padding for 2D)
-        xg1 = self.gunit(F.pad(x1, (1,1,0,0)), 0)
+        # gunit processing with corrected padding
+        xg1 = self.gunit(x1, 0)
         x2 = self.max_pool(x1)
         x3 = xg1 + x2
         
-        xg2 = self.gunit(F.pad(x3, (1,1,0,0)), 1)
+        # gunit 2 processing
+        xg2 = self.gunit(x3, 1)
         x4 = self.max_pool(x3)
         x5 = xg2 + x4
         
-        xg3 = self.gunit(F.pad(x5, (1,1,0,0)), 2)
+        # gunit 3 processing
+        xg3 = self.gunit(x5, 2)
         x6 = self.max_pool(x5)
         x7 = x6 + xg3
         
-        xg4 = self.gunit(F.pad(x7, (1,1,0,0)), 3)
+        # gunit 4 processing
+        xg4 = self.gunit(x7, 3)
         x8 = self.max_pool(x7)
         x_togap = x8 + xg4
         
@@ -419,11 +413,13 @@ class RFUAVNet(nn.Module):
         f_gap_3 = self.gapool(xg3)
         f_gap_4 = self.gapool(xg4)
 
+        # Concatenate GAP features
         f_multigap = torch.cat((f_gap_1, f_gap_2, f_gap_3, f_gap_4), 1)
         f_gap_add = self.gapool(x_togap)
         f_final = torch.cat((f_multigap, f_gap_add), 1)
         f_flat = f_final.flatten(start_dim=1)
 
+        # Final output layer
         out = self.dense(f_flat)
         out = self.smax(out)
         return out
@@ -435,21 +431,20 @@ class RFUAVNet(nn.Module):
         return x
 
     def gunit(self, x, n):
-        # Removed batch norm to match MATLAB
+        # Removed manual padding - using symmetric padding in conv instead
         x = self.groupconv[n](x)
         x = self.elu2[n](x)
         return x
 
     def max_pool(self, x):
-        # Adjusted for 2D with MATLAB's "same" padding
-        return F.max_pool2d(x, kernel_size=(1,2), stride=(1,2), padding=(0,1))
+        # Adjusted padding to ensure size matching
+        return F.max_pool1d(x, kernel_size=2, stride=2, padding=0)
 
     def reset_weights(self):
         for layer in self.children():
             if hasattr(layer, 'reset_parameters'):
                 print(f'Reset trainable parameters of layer = {layer}')
                 layer.reset_parameters()
-
 
 """## Training & Testing"""
 
