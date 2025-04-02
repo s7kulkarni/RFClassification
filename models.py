@@ -93,7 +93,7 @@ class PsdSVM():
         self.cv_models = []
         cv = KFold(n_splits=k_fold, random_state=None, shuffle=True)
         for i, (train_ix, test_ix) in tqdm(enumerate(cv.split(X))):
-            svc = svm.SVC(kernel='rbf', C=8, gamma = 512, class_weight='balanced')
+            svc = svm.SVC(kernel='rbf', C=512, gamma = 8, class_weight='balanced')
 
             ## FEW SHOT
             # few_shot_train_indices = []
