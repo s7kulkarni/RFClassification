@@ -148,7 +148,7 @@ fold_accuracies = []
 # K-Fold Cross-Validation
 k_folds = 5  # You can change this
 n_samples_per_class = 5
-skf = StratifiedKFold(n_splits=k_folds, shuffle=True, random_state=42)
+skf = StratifiedKFold(n_splits=k_folds, shuffle=True, random_state=11)
 
 for fold, (train_idx, test_idx) in enumerate(skf.split(X_use, y_use)):
     print(f"Fold {fold + 1}/{k_folds}")
