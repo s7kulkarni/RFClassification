@@ -12,6 +12,7 @@ from feat_gen_functions import *
 from scipy.fft import fft
 from scipy.signal import get_window
 import librosa
+from scipy.fft import fft, dct  # --- Changed: Added dct import from scipy.fft ---
 
 t_seg = 250
 fs = 40e6 #40 MHz
@@ -79,10 +80,10 @@ def compute_improved_lfcc(signal, fs, num_filters=24, num_coeffs=12, fmin=0, fma
     log_filter_bank_output = np.log(filter_bank_output)
 
     # Step 6: Compute DCT for cepstral coefficients
-    lfcc = librosa.util.dct(log_filter_bank_output, n_mfcc=num_coeffs + 1)[1:]  # Exclude 0th initially
+    lfcc = dct(log_filter_bank_output, n=num_coeffs + 1, type=2, norm='ortho')[1:]  # Exclude 0th
 
     # Step 7: Add zero-order coefficient and log energy
-    zero_order = librosa.util.dct(log_filter_bank_output, n_mfcc=1)[0]
+    zero_order = dct(log_filter_bank_output, n=1, type=2, norm='ortho')[0]
     log_energy = np.log(np.sum(power_spectrum) + np.finfo(float).eps)
     lfcc_vector = np.concatenate([zero_order, lfcc, log_energy])  # 1D vector
 
