@@ -85,8 +85,7 @@ def compute_improved_lfcc(signal, fs, num_filters=24, num_coeffs=12, fmin=0, fma
     # Step 7: Add zero-order coefficient and log energy
     zero_order = dct(log_filter_bank_output, n=1, type=2, norm='ortho')[0]
     log_energy = np.log(np.sum(power_spectrum) + np.finfo(float).eps)
-    lfcc_vector = np.concatenate([zero_order, lfcc, log_energy])  # 1D vector
-
+    lfcc_vector = np.concatenate([np.atleast_1d(zero_order), lfcc, np.atleast_1d(log_energy)])
     return lfcc_vector
 
 def process_and_save_incrementally(checkpoint_dir='/home/zebra/shriniwas/checkpoints_lfcc'):
