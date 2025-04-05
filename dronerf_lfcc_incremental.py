@@ -74,7 +74,7 @@ def compute_improved_lfcc(signal, fs, num_filters=24, num_coeffs=12, fmin=0, fma
 
     return lfcc_vector
 
-def process_and_save_incrementally(checkpoint_dir='/home/zebra/shriniwas/checkpoints'):
+def process_and_save_incrementally(checkpoint_dir='/home/zebra/shriniwas/checkpoints_lfcc'):
     """
     Processes drone RF data incrementally, calculates PSD, and saves results incrementally.
     """
