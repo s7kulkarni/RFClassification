@@ -198,8 +198,8 @@ def process_and_save_incrementally(checkpoint_dir='/home/zebra/shriniwas/checkpo
         MODELALBEL = []
 
         for seg in rf_sig_segments:
-            lfcc_low = compute_improved_lfcc(seg[1], fs, fmin=0, fmax=100e6)
-            lfcc_high = compute_improved_lfcc(seg[0], fs, fmin=2380e6, fmax=2480e6)
+            lfcc_low = compute_improved_lfcc(seg[1], fs, fmin=2400e6, fmax=2440e6)
+            lfcc_high = compute_improved_lfcc(seg[0], fs, fmin=2440e6, fmax=2480e6)
             lfcc_combined = np.concatenate([lfcc_low, lfcc_high])
             print("LFCC shape ", lfcc_combined.shape)
             F_LFCC.append(lfcc_combined)
