@@ -22,6 +22,24 @@ arr_lfcc_folder = "ARR_LFCC_"+high_low+'_'+str(t_seg)+"/"
 perturbation_filepath = "/home/zebra/shriniwas/RFClassification/two_class_perturbation_001.npy"
 main_folder = dronerf_raw_path
 
+# --- New function ---
+def linear_filter_bank(fs, N, num_filters, fmin, fmax):
+    """Create a linear filter bank with triangular filters."""
+    freqs = np.linspace(fmin, fmax, num_filters + 2)  # Filter edges
+    bins = np.floor((N + 1) * freqs / fs).astype(int)  # FFT bin indices
+    filter_bank = np.zeros((num_filters, N // 2 + 1))
+    
+    for m in range(num_filters):
+        f_low, f_mid, f_high = bins[m], bins[m + 1], bins[m + 2]
+        # Left triangle slope
+        for k in range(f_low, f_mid):
+            filter_bank[m, k] = (k - f_low) / (f_mid - f_low)
+        # Right triangle slope
+        for k in range(f_mid, f_high):
+            filter_bank[m, k] = (f_high - k) / (f_high - f_mid)
+    
+    return filter_bank
+
 def compute_improved_lfcc(signal, fs, num_filters=24, num_coeffs=12, fmin=0, fmax=None):
     """
     Compute improved LFCC features from an RF signal as a single vector.
@@ -50,11 +68,7 @@ def compute_improved_lfcc(signal, fs, num_filters=24, num_coeffs=12, fmin=0, fma
     abs_squared_dft = np.abs(dft) ** 2
 
     # Step 3: Construct linear filter bank
-    filter_bank = librosa.filters.constant_q(
-        sr=fs, fmin=fmin, fmax=fmax, n_bins=num_filters, bins_per_octave=num_filters,
-        scale=False, filter_scale=1, norm=1, pad_fft=False
-    )
-    filter_bank = filter_bank[:, :N//2 + 1]
+    filter_bank = filter_bank = linear_filter_bank(fs, N, num_filters, fmin, fmax)
 
     # Step 4: Apply filter bank to power spectrum
     power_spectrum = abs_squared_dft[:N//2 + 1]
