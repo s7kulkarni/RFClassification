@@ -293,6 +293,8 @@ class DroneRFTorch(Dataset):
 
         if feat_name == 'RAW':
             sub_folder_name = feat_format+'_'+feat_name+'_'+str(10000)+'_'+str(seg_len)+'/'
+        elif feat_name == 'LFCC':
+            sub_folder_name = feat_format+'_'+feat_name+'_'+highlow+'_'+str(seg_len)+'/'
         else:
             sub_folder_name = feat_format+'_'+feat_name+'_'+highlow+'_'+str(n_per_seg)+'_'+str(seg_len)+'/'
         self.dir_name = feat_folder+sub_folder_name
