@@ -53,7 +53,7 @@ feat_name = 'LFCC'
 t_seg = 250 #ms
 n_per_seg = 4096
 interferences = ['WIFI', 'BLUE', 'BOTH', 'CLEAN']
-output_name = 'drones'
+output_name = 'modes'
 norm_ratio = '04' # 0.xxx mapped to xxx
 feat_format = 'ARR'
 which_dataset = 'dronerf'
@@ -103,7 +103,7 @@ for fold, (train_idx, test_idx) in enumerate(skf.split(X_use, y_use)):
     # Split data into train and test sets for this fold
     X_train, X_test = X_use[train_idx], X_use[test_idx]
     Y_train, Y_test = y_use[train_idx], y_use[test_idx]
-    svc = svm.SVC(kernel='rbf', C=0.5, gamma = 0.125, class_weight='balanced') # 8, 512
+    svc = svm.SVC(kernel='rbf', C=32, gamma = 0.125, class_weight='balanced') # 8, 512
 
     # Few-shot learning: Select `n_samples_per_class` for each class
     few_shot_train_indices = []
