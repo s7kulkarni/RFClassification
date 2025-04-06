@@ -136,13 +136,13 @@ print('Loading DroneRF Dataset')
 highlow = 'LH'
 dataset = DroneRFTorch(dronerf_feat_path, feat_name, t_seg, n_per_seg,
                     feat_format, output_name, output_tensor, highlow)
-perturbed_dataset = DroneRFTorchPerturbed(dronerf_feat_path, feat_name, t_seg, n_per_seg,
-                    feat_format, 'drones', output_tensor, highlow, norm_ratio, 'drones')
+# perturbed_dataset = DroneRFTorchPerturbed(dronerf_feat_path, feat_name, t_seg, n_per_seg,
+#                     feat_format, 'drones', output_tensor, highlow, norm_ratio, 'drones')
 print("dataset loaded")
 # X_use, y_use = dataset.get_arrays()
 X, Y = get_arrays_efficient(dataset, batch_size=64)
-X_perturbed, Y_perturbed = get_arrays_efficient(perturbed_dataset, batch_size=64)
-print("SHAPES ", X.shape, Y.shape, X_perturbed.shape, Y_perturbed.shape)
+# X_perturbed, Y_perturbed = get_arrays_efficient(perturbed_dataset, batch_size=64)
+# print("SHAPES ", X.shape, Y.shape, X_perturbed.shape, Y_perturbed.shape)
 
 ## RAND X_PERT ##
 # max_value = np.max(X)
