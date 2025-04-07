@@ -73,8 +73,8 @@ feat_name = 'PSD'
 t_seg = 250 #ms
 n_per_seg = 4096
 interferences = ['WIFI', 'BLUE', 'BOTH', 'CLEAN']
-output_name = 'modes'
-norm_ratio = '04' # 0.xxx mapped to xxx
+output_name = 'drones'
+norm_ratio = '05' # 0.xxx mapped to xxx
 feat_format = 'ARR'
 which_dataset = 'dronerf'
 output_tensor = False
@@ -85,7 +85,7 @@ if which_dataset == 'dronerf':
     dataset = DroneRFTorch(dronerf_feat_path, feat_name, t_seg, n_per_seg,
                        feat_format, output_name, output_tensor, highlow)
     perturbed_dataset = DroneRFTorchPerturbed(dronerf_feat_path, feat_name, t_seg, n_per_seg,
-                        feat_format, 'drones', output_tensor, highlow, norm_ratio, 'drones')
+                        feat_format, output_name, output_tensor, highlow, norm_ratio, output_name)
 elif which_dataset == 'dronedetect':
     print('Loading DroneDetect Dataset')
     dataset = DroneDetectTorch(dronedetect_feat_path, feat_name, t_seg, n_per_seg, feat_format,
@@ -124,8 +124,8 @@ print(np.sum(y_use=='None'))
 
 model = PsdSVM(t_seg, n_per_seg)
 
-accs, f1s, runts = model.run_cv(X_use, y_use, k_fold=5)
-# accs, f1s, runts = model.run_cv_perturbed(X_use, y_use, X_perturbed, y_perturbed, k_fold=5)
+# accs, f1s, runts = model.run_cv(X_use, y_use, k_fold=5)
+accs, f1s, runts = model.run_cv_perturbed(X_use, y_use, X_perturbed, y_perturbed, k_fold=5)
 
 for icv in range(5):
     print(model.cv_models[icv].support_vectors_.shape)
@@ -139,8 +139,8 @@ parameters = {'C':Cs, 'gamma':gammas}
 
 k_fold=5
 
-accs, f1s, runts, best_params = model.run_gridsearch(X_use, y_use, parameters, k_fold)
-# accs, f1s, runts, best_params = model.run_gridsearch_perturbed(X_use, y_use, X_perturbed, y_perturbed, parameters, k_fold)
+# accs, f1s, runts, best_params = model.run_gridsearch(X_use, y_use, parameters, k_fold)
+accs, f1s, runts, best_params = model.run_gridsearch_perturbed(X_use, y_use, X_perturbed, y_perturbed, parameters, k_fold)
 
 #################################### MY OWN TESTING ########################################
 # Store accuracy for each fold
@@ -148,14 +148,14 @@ fold_accuracies = []
 # K-Fold Cross-Validation
 k_folds = 5  # You can change this
 n_samples_per_class = 5
-skf = StratifiedKFold(n_splits=k_folds, shuffle=True, random_state=11)
+skf = StratifiedKFold(n_splits=k_folds, shuffle=True, random_state=42)
 
 for fold, (train_idx, test_idx) in enumerate(skf.split(X_use, y_use)):
     print(f"Fold {fold + 1}/{k_folds}")
     # Split data into train and test sets for this fold
     X_train, X_test = X_use[train_idx], X_use[test_idx]
     Y_train, Y_test = y_use[train_idx], y_use[test_idx]
-    svc = svm.SVC(kernel='rbf', C=512, gamma = 0.5, class_weight='balanced') # 8, 512
+    svc = svm.SVC(kernel='rbf', C=8, gamma = 512, class_weight='balanced') # 8, 512
 
     # Few-shot learning: Select `n_samples_per_class` for each class
     few_shot_train_indices = []
@@ -170,8 +170,8 @@ for fold, (train_idx, test_idx) in enumerate(skf.split(X_use, y_use)):
 
 
     svc.fit(X_train, Y_train)
-    Y_pred = svc.predict(X_test)
-    accuracy = accuracy_score(Y_pred, Y_test)
+    Y_pred = svc.predict(X_perturbed[test_idx])
+    accuracy = accuracy_score(Y_pred, y_perturbed[test_idx])
     print(f"Fold {fold + 1} Accuracy: {accuracy:.4f}")
     fold_accuracies.append(accuracy)
 

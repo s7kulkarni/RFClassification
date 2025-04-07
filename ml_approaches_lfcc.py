@@ -64,12 +64,17 @@ if which_dataset == 'dronerf':
     highlow = 'LH'
     dataset = DroneRFTorch(dronerf_feat_path, feat_name, t_seg, n_per_seg,
                        feat_format, output_name, output_tensor, highlow)
+    perturbed_dataset = DroneRFTorchPerturbed(dronerf_feat_path, feat_name, t_seg, n_per_seg,
+                        feat_format, output_name, output_tensor, highlow, norm_ratio, output_name)
 elif which_dataset == 'dronedetect':
     print('Loading DroneDetect Dataset')
     dataset = DroneDetectTorch(dronedetect_feat_path, feat_name, t_seg, n_per_seg, feat_format,
                                     output_name, output_tensor, interferences)
 print("dataset loaded")
 X_use, y_use = get_arrays_efficient(dataset, batch_size=64)
+X_perturbed, y_perturbed = get_arrays_efficient(perturbed_dataset, batch_size=64)
+
+print("ARE WE EVEN PERTURBING: ", not np.allclose(X_use, X_perturbed, atol=1e-5))
 
 
 print(X_use.shape)
@@ -118,8 +123,8 @@ for fold, (train_idx, test_idx) in enumerate(skf.split(X_use, y_use)):
 
 
     svc.fit(X_train, Y_train)
-    Y_pred = svc.predict(X_test)
-    accuracy = accuracy_score(Y_pred, Y_test)
+    Y_pred = svc.predict(X_perturbed[test_idx])
+    accuracy = accuracy_score(Y_pred, y_perturbed[test_idx])
     print(f"Fold {fold + 1} Accuracy: {accuracy:.4f}")
     fold_accuracies.append(accuracy)
 
