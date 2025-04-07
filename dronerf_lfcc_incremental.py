@@ -19,7 +19,7 @@ fs = 40e6 #40 MHz
 features_folder = dronerf_feat_path
 n_per_seg = 4096 # length of each segment (powers of 2)
 high_low = 'LH' #'L', 'H' # high or low range of frequency
-arr_lfcc_folder = "ARR_LFCC_"+high_low+'_'+str(t_seg)+"/"
+arr_lfcc_folder = "ARR_LFCC_"+high_low+'_'+str(t_seg)+"_"+"PERTURBED"+"_"+"drones"+"_"+"04"+"/"
 perturbation_filepath = "/home/zebra/shriniwas/RFClassification/two_class_perturbation_001.npy"
 main_folder = dronerf_raw_path
 
@@ -180,10 +180,11 @@ def process_and_save_incrementally(checkpoint_dir='/home/zebra/shriniwas/checkpo
         # print("ARE ORIG N PERTURBED CLOSE?", np.allclose(rf_data_l, rf_data_l + tiled_array, atol=1e-5))
         # print("NORM RATIO", np.linalg.norm(tiled_array)/np.linalg.norm(rf_data_l))
         current_ratio = np.linalg.norm(tiled_array) / np.linalg.norm(rf_data_l)
-        desired_ratio = 0.4
+        desired_ratio = 0.5
         scaling_factor = desired_ratio / current_ratio
         tiled_array = tiled_array * scaling_factor
-        # rf_data_l = rf_data_l + tiled_array
+        rf_data_l = rf_data_l + tiled_array
+        rf_data_h = rf_data_h + tiled_array
         ############ PERTURBED!
 
         print("rf_data_h, rf_data_l shapes ", rf_data_h.shape, rf_data_l.shape)
