@@ -19,7 +19,7 @@ fs = 40e6 #40 MHz
 features_folder = dronerf_feat_path
 n_per_seg = 4096 # length of each segment (powers of 2)
 high_low = 'LH' #'L', 'H' # high or low range of frequency
-arr_lfcc_folder = "ARR_LFCC_"+high_low+'_'+str(t_seg)+"_"+"PERTURBED"+"_"+"drones"+"_"+"04"+"/"
+arr_lfcc_folder = "ARR_LFCC_"+high_low+'_'+str(t_seg)+"_"+"PERTURBED"+"_"+"drones"+"_"+"05"+"/"
 perturbation_filepath = "/home/zebra/shriniwas/RFClassification/two_class_perturbation_001.npy"
 main_folder = dronerf_raw_path
 
