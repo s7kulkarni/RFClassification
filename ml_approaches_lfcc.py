@@ -53,7 +53,7 @@ feat_name = 'LFCC'
 t_seg = 250 #ms
 n_per_seg = 4096
 interferences = ['WIFI', 'BLUE', 'BOTH', 'CLEAN']
-output_name = 'modes'
+output_name = 'drones'
 norm_ratio = '05' # 0.xxx mapped to xxx
 feat_format = 'ARR'
 which_dataset = 'dronerf'
@@ -73,9 +73,8 @@ elif which_dataset == 'dronedetect':
                                     output_name, output_tensor, interferences)
 print("dataset loaded")
 X_use, y_use = get_arrays_efficient(dataset, batch_size=64)
-# X_perturbed, y_perturbed = get_arrays_efficient(perturbed_dataset, batch_size=64)
-
-# print("ARE WE EVEN PERTURBING: ", not np.allclose(X_use, X_perturbed, atol=1e-5))
+X_perturbed, y_perturbed = get_arrays_efficient(perturbed_dataset, batch_size=64)
+print("ARE WE EVEN PERTURBING: ", not np.allclose(X_use, X_perturbed, atol=1e-5))
 
 
 print(X_use.shape)
@@ -119,8 +118,8 @@ for fold, (train_idx, test_idx) in enumerate(skf.split(X_use, y_use)):
         few_shot_train_indices.extend(selected_indices)
 
     # Use only the selected few-shot samples for training
-    # X_train = X_train[few_shot_train_indices]
-    # Y_train = Y_train[few_shot_train_indices]
+    X_train = X_train[few_shot_train_indices]
+    Y_train = Y_train[few_shot_train_indices]
 
 
     svc.fit(X_train, Y_train)
