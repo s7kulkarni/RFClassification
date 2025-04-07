@@ -239,189 +239,93 @@ labels_output_path = ['/home/zebra/shriniwas/RFUAV/ys.dat',
                       '/home/zebra/shriniwas/RFUAV/y10s.dat']
 Xs_norm, ys_arr, y4s_arr, y10s_arr = normalize_data_memmap(main_folder, t_seg, min_vals, max_vals, output_path, labels_output_path, dataset_shape)
 
-dataset = DroneData(Xs_norm, ys_arr)  # Assume y10s_arr is loaded correctly
+dataset = DroneData(Xs_norm, y4s_arr)  # Assume y10s_arr is loaded correctly
 
 print("INFO: Loaded the dataset, length is -", len(dataset))
 print("SHAPES ", Xs_norm.shape, ys_arr.shape)
 print("Drones labels", y4s_arr[:10], "zeros? x,2,4,10 ", np.all(Xs_norm == 0), np.all(ys_arr == 0), np.all(y4s_arr == 0), np.all(y10s_arr == 0))
 """## Model"""
 
-# class RFUAVNet(nn.Module):
-#     #  Determine what layers and their order in CNN object
-#     def __init__(self, num_classes):
-#         super(RFUAVNet, self).__init__()
-#         self.num_classes = num_classes
-
-#         self.dense = nn.Linear(320, num_classes)
-#         self.pool = nn.MaxPool1d(kernel_size=2, stride=2)
-#         self.smax = nn.Softmax(dim=1)
-
-#         # for r unit
-#         self.conv1 = nn.Conv1d(in_channels=2, out_channels=64, kernel_size=5, stride=5)
-#         self.norm1 = nn.BatchNorm1d(num_features=64)
-#         self.elu1 = nn.ELU(alpha=1.0, inplace=False)
-
-#         # setup for components of the gunit
-#         self.groupconvlist = []
-#         self.norm2list = []
-#         self.elu2list = []
-#         for i in range(4):
-#             self.groupconvlist.append( nn.Conv1d(
-#                   in_channels=64,
-#                   out_channels=64,
-#                   kernel_size=3,
-#                   stride = 2,
-#                   groups=8,
-#     #               bias=False,
-#                   dtype=torch.float32
-#                 ))
-#             self.norm2list.append(nn.BatchNorm1d(num_features=64))
-#             self.elu2list.append(nn.ELU(alpha=1.0, inplace=False))
-#         self.groupconv = nn.ModuleList(self.groupconvlist)
-#         self.norm2 = nn.ModuleList(self.norm2list)
-#         self.elu2 = nn.ModuleList(self.elu2list)
-
-#         # multi-gap implementation
-#         self.avgpool1000 = nn.AvgPool1d(kernel_size=1000)
-#         self.avgpool500 = nn.AvgPool1d(kernel_size=500)
-#         self.avgpool250 = nn.AvgPool1d(kernel_size=250)
-#         self.avgpool125 = nn.AvgPool1d(kernel_size=125)
-
-#     # Progresses data across layers
-#     def forward(self, x):
-#         # runit first
-#         x1 = self.runit(x)
-#         xg1 = self.gunit(F.pad(x1, (1,0)), 0)
-#         x2 = self.pool(x1)
-#         x3 = xg1+x2
-
-#         # series of gunits
-#         xg2 = self.gunit(F.pad(x3, (1,0)), 1)
-#         x4 = self.pool(x3)
-#         x5 = xg2+x4
-
-#         xg3 = self.gunit(F.pad(x5, (1,0)), 2)
-#         x6 = self.pool(x5)
-#         x7 = x6+xg3
-
-#         xg4 = self.gunit(F.pad(x7, (1,0)), 3)
-#         x8 = self.pool(x7)
-#         x_togap = x8+xg4
-
-
-#         # gap and multi-gap
-#         f_gap_1 = self.avgpool1000(xg1)
-#         f_gap_2 = self.avgpool500(xg2)
-#         f_gap_3 = self.avgpool250(xg3)
-#         f_gap_4 = self.avgpool125(xg4)
-
-#         f_multigap = torch.cat((f_gap_1,f_gap_2, f_gap_3, f_gap_4), 1)
-
-#         f_gap_add = self.avgpool125(x_togap)
-
-#         f_final = torch.cat((f_multigap, f_gap_add),1)
-#         f_flat = f_final.flatten(start_dim=1)
-
-#         out = self.dense(f_flat)
-# #         out = self.smax(f_fc)
-#         # fc_layer
-
-#         return out
-
-#     def runit(self, x):
-#         x = self.conv1(x)
-#         x = self.norm1(x)
-#         x = self.elu1(x)
-#         return x
-
-#     def gunit(self, x, n):
-#         # group convolution layer 8 by 8
-#         # norm
-#         # elu
-#         # n indicates which gunit
-#         x = self.groupconv[n](x)
-#         x = self.norm2[n](x)
-#         x = self.elu2[n](x)
-#         return x
-
-#     def reset_weights(self):
-#         for layer in self.children():
-#             if hasattr(layer, 'reset_parameters'):
-#                 print(f'Reset trainable parameters of layer = {layer}')
-#                 layer.reset_parameters()
-
 class RFUAVNet(nn.Module):
+    #  Determine what layers and their order in CNN object
     def __init__(self, num_classes):
         super(RFUAVNet, self).__init__()
         self.num_classes = num_classes
 
-        # Fully connected output layer
         self.dense = nn.Linear(320, num_classes)
+        self.pool = nn.MaxPool1d(kernel_size=2, stride=2)
         self.smax = nn.Softmax(dim=1)
 
-        # For r unit (initial conv block)
-        self.conv1 = nn.Conv1d(in_channels=2, out_channels=64, kernel_size=5, stride=5, padding=2)
+        # for r unit
+        self.conv1 = nn.Conv1d(in_channels=2, out_channels=64, kernel_size=5, stride=5)
         self.norm1 = nn.BatchNorm1d(num_features=64)
         self.elu1 = nn.ELU(alpha=1.0, inplace=False)
 
-        # Setup for components of the gunit (group convolutions)
+        # setup for components of the gunit
         self.groupconvlist = []
+        self.norm2list = []
         self.elu2list = []
         for i in range(4):
-            self.groupconvlist.append(nn.Conv1d(
-                in_channels=64,
-                out_channels=64,
-                kernel_size=3,
-                stride=2,
-                groups=8,
-                padding=1  # Changed to symmetric padding
-            ))
+            self.groupconvlist.append( nn.Conv1d(
+                  in_channels=64,
+                  out_channels=64,
+                  kernel_size=3,
+                  stride = 2,
+                  groups=8,
+    #               bias=False,
+                  dtype=torch.float32
+                ))
+            self.norm2list.append(nn.BatchNorm1d(num_features=64))
             self.elu2list.append(nn.ELU(alpha=1.0, inplace=False))
         self.groupconv = nn.ModuleList(self.groupconvlist)
+        self.norm2 = nn.ModuleList(self.norm2list)
         self.elu2 = nn.ModuleList(self.elu2list)
 
-        # Global average pooling
-        self.gapool = nn.AdaptiveAvgPool1d(1)
+        # multi-gap implementation
+        self.avgpool1000 = nn.AvgPool1d(kernel_size=1000)
+        self.avgpool500 = nn.AvgPool1d(kernel_size=500)
+        self.avgpool250 = nn.AvgPool1d(kernel_size=250)
+        self.avgpool125 = nn.AvgPool1d(kernel_size=125)
 
+    # Progresses data across layers
     def forward(self, x):
-        # runit first (initial conv block)
+        # runit first
         x1 = self.runit(x)
+        xg1 = self.gunit(F.pad(x1, (1,0)), 0)
+        x2 = self.pool(x1)
+        x3 = xg1+x2
 
-        # gunit processing with corrected padding
-        xg1 = self.gunit(x1, 0)
-        x2 = self.max_pool(x1)
-        x3 = xg1 + x2
-        
-        # gunit 2 processing
-        xg2 = self.gunit(x3, 1)
-        x4 = self.max_pool(x3)
-        x5 = xg2 + x4
-        
-        # gunit 3 processing
-        xg3 = self.gunit(x5, 2)
-        x6 = self.max_pool(x5)
-        x7 = x6 + xg3
-        
-        # gunit 4 processing
-        xg4 = self.gunit(x7, 3)
-        x8 = self.max_pool(x7)
-        x_togap = x8 + xg4
-        
-        # Global average pooling
-        f_gap_1 = self.gapool(xg1)
-        f_gap_2 = self.gapool(xg2)
-        f_gap_3 = self.gapool(xg3)
-        f_gap_4 = self.gapool(xg4)
+        # series of gunits
+        xg2 = self.gunit(F.pad(x3, (1,0)), 1)
+        x4 = self.pool(x3)
+        x5 = xg2+x4
 
-        # Concatenate GAP features
-        f_multigap = torch.cat((f_gap_1, f_gap_2, f_gap_3, f_gap_4), 1)
-        f_gap_add = self.gapool(x_togap)
-        f_final = torch.cat((f_multigap, f_gap_add), 1)
+        xg3 = self.gunit(F.pad(x5, (1,0)), 2)
+        x6 = self.pool(x5)
+        x7 = x6+xg3
+
+        xg4 = self.gunit(F.pad(x7, (1,0)), 3)
+        x8 = self.pool(x7)
+        x_togap = x8+xg4
+
+
+        # gap and multi-gap
+        f_gap_1 = self.avgpool1000(xg1)
+        f_gap_2 = self.avgpool500(xg2)
+        f_gap_3 = self.avgpool250(xg3)
+        f_gap_4 = self.avgpool125(xg4)
+
+        f_multigap = torch.cat((f_gap_1,f_gap_2, f_gap_3, f_gap_4), 1)
+
+        f_gap_add = self.avgpool125(x_togap)
+
+        f_final = torch.cat((f_multigap, f_gap_add),1)
         f_flat = f_final.flatten(start_dim=1)
 
-        # Final output layer
         out = self.dense(f_flat)
-        out = self.smax(out)
+#         out = self.smax(f_fc)
+        # fc_layer
+
         return out
 
     def runit(self, x):
@@ -431,14 +335,14 @@ class RFUAVNet(nn.Module):
         return x
 
     def gunit(self, x, n):
-        # Removed manual padding - using symmetric padding in conv instead
+        # group convolution layer 8 by 8
+        # norm
+        # elu
+        # n indicates which gunit
         x = self.groupconv[n](x)
+        x = self.norm2[n](x)
         x = self.elu2[n](x)
         return x
-
-    def max_pool(self, x):
-        # Adjusted padding to ensure size matching
-        return F.max_pool1d(x, kernel_size=2, stride=2, padding=0)
 
     def reset_weights(self):
         for layer in self.children():
@@ -446,12 +350,108 @@ class RFUAVNet(nn.Module):
                 print(f'Reset trainable parameters of layer = {layer}')
                 layer.reset_parameters()
 
+# class RFUAVNet(nn.Module):
+#     def __init__(self, num_classes):
+#         super(RFUAVNet, self).__init__()
+#         self.num_classes = num_classes
+
+#         # Fully connected output layer
+#         self.dense = nn.Linear(320, num_classes)
+#         self.smax = nn.Softmax(dim=1)
+
+#         # For r unit (initial conv block)
+#         self.conv1 = nn.Conv1d(in_channels=2, out_channels=64, kernel_size=5, stride=5, padding=2)
+#         self.norm1 = nn.BatchNorm1d(num_features=64)
+#         self.elu1 = nn.ELU(alpha=1.0, inplace=False)
+
+#         # Setup for components of the gunit (group convolutions)
+#         self.groupconvlist = []
+#         self.elu2list = []
+#         for i in range(4):
+#             self.groupconvlist.append(nn.Conv1d(
+#                 in_channels=64,
+#                 out_channels=64,
+#                 kernel_size=3,
+#                 stride=2,
+#                 groups=8,
+#                 padding=1  # Changed to symmetric padding
+#             ))
+#             self.elu2list.append(nn.ELU(alpha=1.0, inplace=False))
+#         self.groupconv = nn.ModuleList(self.groupconvlist)
+#         self.elu2 = nn.ModuleList(self.elu2list)
+
+#         # Global average pooling
+#         self.gapool = nn.AdaptiveAvgPool1d(1)
+
+#     def forward(self, x):
+#         # runit first (initial conv block)
+#         x1 = self.runit(x)
+
+#         # gunit processing with corrected padding
+#         xg1 = self.gunit(x1, 0)
+#         x2 = self.max_pool(x1)
+#         x3 = xg1 + x2
+        
+#         # gunit 2 processing
+#         xg2 = self.gunit(x3, 1)
+#         x4 = self.max_pool(x3)
+#         x5 = xg2 + x4
+        
+#         # gunit 3 processing
+#         xg3 = self.gunit(x5, 2)
+#         x6 = self.max_pool(x5)
+#         x7 = x6 + xg3
+        
+#         # gunit 4 processing
+#         xg4 = self.gunit(x7, 3)
+#         x8 = self.max_pool(x7)
+#         x_togap = x8 + xg4
+        
+#         # Global average pooling
+#         f_gap_1 = self.gapool(xg1)
+#         f_gap_2 = self.gapool(xg2)
+#         f_gap_3 = self.gapool(xg3)
+#         f_gap_4 = self.gapool(xg4)
+
+#         # Concatenate GAP features
+#         f_multigap = torch.cat((f_gap_1, f_gap_2, f_gap_3, f_gap_4), 1)
+#         f_gap_add = self.gapool(x_togap)
+#         f_final = torch.cat((f_multigap, f_gap_add), 1)
+#         f_flat = f_final.flatten(start_dim=1)
+
+#         # Final output layer
+#         out = self.dense(f_flat)
+#         out = self.smax(out)
+#         return out
+
+#     def runit(self, x):
+#         x = self.conv1(x)
+#         x = self.norm1(x)
+#         x = self.elu1(x)
+#         return x
+
+#     def gunit(self, x, n):
+#         # Removed manual padding - using symmetric padding in conv instead
+#         x = self.groupconv[n](x)
+#         x = self.elu2[n](x)
+#         return x
+
+#     def max_pool(self, x):
+#         # Adjusted padding to ensure size matching
+#         return F.max_pool1d(x, kernel_size=2, stride=2, padding=0)
+
+#     def reset_weights(self):
+#         for layer in self.children():
+#             if hasattr(layer, 'reset_parameters'):
+#                 print(f'Reset trainable parameters of layer = {layer}')
+#                 layer.reset_parameters()
+
 """## Training & Testing"""
 
 from nn_functions import runkfoldcv
 
 # Network Hyperparameters
-num_classes = 2
+num_classes = 4
 batch_size = 128 # 128
 learning_rate = 0.01
 num_epochs = 5 # 0
