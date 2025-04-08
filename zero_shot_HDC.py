@@ -176,7 +176,8 @@ final_metrics = {
 }
 
 k_folds = 5
-skf = StratifiedKFold(n_splits=k_folds, shuffle=True, random_state=42)
+set_seed(seed)
+skf = StratifiedKFold(n_splits=k_folds, shuffle=True, random_state=seed)
 
 for unknown_class in range(4):  # Test each class as unknown
     print(f"\n=== Evaluating Class {unknown_class} as Unknown ===")
@@ -201,7 +202,7 @@ for unknown_class in range(4):  # Test each class as unknown
         global train_ld, test_ld  # Required for your train/test methods
         train_dataset = torch.utils.data.TensorDataset(X_train_known, Y_train_known)
         test_dataset = torch.utils.data.TensorDataset(X_test, Y_test)
-        train_ld = torch.utils.data.DataLoader(train_dataset, batch_size=1, shuffle=True)
+        train_ld = torch.utils.data.DataLoader(train_dataset, batch_size=1, shuffle=True, random_state = seed)
         test_ld = torch.utils.data.DataLoader(test_dataset, batch_size=1, shuffle=False)
 
         # Train HDC model (3 classes)
@@ -231,7 +232,7 @@ for unknown_class in range(4):  # Test each class as unknown
         fold_metrics['auroc'].append(roc_auc_score(y_true, residuals))
 
         # Thresholding (95th percentile of normal class residuals)
-        threshold = np.percentile(train_residuals, 95)
+        threshold = np.percentile(train_residuals, 90)
         y_pred = (residuals > threshold).astype(int)
 
         tn = ((y_pred == 0) & (y_true == 0)).sum()  # True negatives
