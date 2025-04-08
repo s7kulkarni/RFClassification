@@ -184,7 +184,8 @@ for unknown_class in range(4):  # Test each class as unknown
         'precision': [],
         'recall': [],
         'f1': [],
-        'auroc': []
+        'auroc': [],
+        'specificity': []
     }
 
     for fold, (train_idx, test_idx) in enumerate(skf.split(X_tensor, Y_tensor)):
@@ -231,6 +232,11 @@ for unknown_class in range(4):  # Test each class as unknown
         # Thresholding (95th percentile of normal class residuals)
         threshold = np.percentile(train_residuals, 95)
         y_pred = (residuals > threshold).astype(int)
+
+        tn = ((y_pred == 0) & (y_true == 0)).sum()  # True negatives
+        fp = ((y_pred == 1) & (y_true == 0)).sum()  # False positives
+        specificity = tn / (tn + fp)                # (out of 100 true labels how many were detected true)
+        fold_metrics['specificity'].append(specificity)
 
         # Compute metrics
         fold_metrics['precision'].append(precision_score(y_true, y_pred, zero_division=0))
