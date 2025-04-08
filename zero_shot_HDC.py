@@ -232,7 +232,7 @@ for unknown_class in range(4):  # Test each class as unknown
         fold_metrics['auroc'].append(roc_auc_score(y_true, residuals))
 
         # Thresholding (95th percentile of normal class residuals)
-        threshold = np.percentile(train_residuals, 90)
+        threshold = np.percentile(train_residuals, 85)
         y_pred = (residuals > threshold).astype(int)
 
         tn = ((y_pred == 0) & (y_true == 0)).sum()  # True negatives
