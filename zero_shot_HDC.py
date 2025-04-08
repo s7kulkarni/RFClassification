@@ -202,7 +202,7 @@ for unknown_class in range(4):  # Test each class as unknown
         global train_ld, test_ld  # Required for your train/test methods
         train_dataset = torch.utils.data.TensorDataset(X_train_known, Y_train_known)
         test_dataset = torch.utils.data.TensorDataset(X_test, Y_test)
-        train_ld = torch.utils.data.DataLoader(train_dataset, batch_size=1, shuffle=True, random_state = seed)
+        train_ld = torch.utils.data.DataLoader(train_dataset, batch_size=1, shuffle=True, generator=torch.Generator().manual_seed(seed))
         test_ld = torch.utils.data.DataLoader(test_dataset, batch_size=1, shuffle=False)
 
         # Train HDC model (3 classes)
@@ -242,7 +242,7 @@ for unknown_class in range(4):  # Test each class as unknown
 
         # Compute metrics
         fold_metrics['precision'].append(precision_score(y_true, y_pred, zero_division=0))
-        fold_metrics['recall'].append(recall_score(y_true, y_pred))
+        fold_metrics['recall'].append(recall_score(y_true, y_pred)) # (out of 100 anomalies, how many were detected anomalies)
         fold_metrics['f1'].append(f1_score(y_true, y_pred))
 
     # Store average metrics for this unknown class
