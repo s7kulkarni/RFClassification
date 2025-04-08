@@ -137,7 +137,7 @@ feat_format = 'ARR'
 which_dataset = 'dronerf'
 output_tensor = False
 in_features = 2049
-DIMENSIONS = 10000
+DIMENSIONS = 20000
 seed = 11
 
 print('Loading DroneRF Dataset')
