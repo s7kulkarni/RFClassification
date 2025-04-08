@@ -88,7 +88,7 @@ class RandomProjectionEncoder(nn.Module):
         x = self.flatten(x)
         x = x.squeeze(0)
         sample_hv = torch.matmul(x, self.projection_matrix)
-        # sample_hv = torch.sign(sample_hv)
+        sample_hv = torch.sign(sample_hv)
         sample_hv = sample_hv.unsqueeze(0)
         return sample_hv
 
@@ -248,7 +248,7 @@ for fold, (train_idx, test_idx) in enumerate(skf.split(X_tensor, Y_tensor)):
     
     # Train the model
     train_full_precision(encode, model)
-    model.normalize()
+    # model.normalize()
 
     # Test the model
     accuracy_value = test_model(encode, model)
