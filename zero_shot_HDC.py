@@ -108,9 +108,7 @@ def train_full_precision(encode, model):
             model.add_online(samples_hv, labels)
 
             # Compute and store training residuals
-            similarities = torch.cosine_similarity(
-                samples_hv.unsqueeze(1), model.centroids.unsqueeze(0), dim=-1
-            )
+            similarities = model(samples_hv)  # Shape: [batch_size, num_classes]
             batch_residuals = 1 - similarities.max(dim=1).values
             train_residuals.extend(batch_residuals.cpu().numpy())
     return np.array(train_residuals)
@@ -217,9 +215,7 @@ for unknown_class in range(4):  # Test each class as unknown
             x_hv = encode(x)
             
             # Get similarities to all centroids
-            similarities = torch.cosine_similarity(
-                x_hv.unsqueeze(1), model.centroids.unsqueeze(0), dim=-1
-            )
+            similarities = model(x_hv)
             
             # Residual = 1 - max similarity (higher = more anomalous)
             residual = 1 - similarities.max().item()
