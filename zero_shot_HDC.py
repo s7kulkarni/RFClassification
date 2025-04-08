@@ -171,7 +171,8 @@ final_metrics = {
     'precision': [],
     'recall': [],
     'f1': [],
-    'auroc': []
+    'auroc': [],
+    'specificity': []
 }
 
 k_folds = 5
