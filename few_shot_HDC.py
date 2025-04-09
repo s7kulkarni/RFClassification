@@ -78,7 +78,7 @@ def set_seed(seed):
 
 
 class RFFEncoder(torch.nn.Module):
-    def __init__(self, fdim: int, dim: int = 1024, bw: float = 0.031, seed: int = 11, device=None):
+    def __init__(self, fdim: int, dim: int = 1024, bw: float = 1, seed: int = 11, device=None):
         super().__init__()
         self.dim = dim
         
@@ -105,6 +105,10 @@ class RFFEncoder(torch.nn.Module):
         self.flatten = torch.nn.Flatten()
     
     def forward(self, x: torch.Tensor) -> torch.Tensor:
+        # Ensure input is on the same device as parameters
+        if x.device != self.projection.device:
+            x = x.to(self.projection.device)
+            
         x = self.flatten(x)
         x = x.squeeze(0)
         
@@ -118,6 +122,10 @@ class RFFEncoder(torch.nn.Module):
         # Apply sign function and add back batch dimension
         proj = torch.sign(proj)
         proj = proj.unsqueeze(0)
+        
+        # Check for zero vectors (debugging)
+        if (proj.abs().sum(dim=1) == 0).any():
+            print("Warning: Zero vector detected in encoder output")
         
         return proj
 
