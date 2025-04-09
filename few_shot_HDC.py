@@ -136,7 +136,6 @@ def train_full_precision(encode, model):
             # print(labels.shape, )
             # Encode the samples using the random projection matrix
             samples_hv = encode(samples)
-            print("samples_hv.shape ", samples_hv.shape)
             # Add the encoded hypervectors to the model
             model.add_online(samples_hv, labels)
 
