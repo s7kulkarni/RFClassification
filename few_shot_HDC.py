@@ -78,7 +78,7 @@ def set_seed(seed):
 
 
 class RFFEncoder(torch.nn.Module):
-    def __init__(self, fdim: int, dim: int = 1024, bw: float = 100, seed: int = 11, device=None):
+    def __init__(self, fdim: int, dim: int = 1024, bw: float = 50, seed: int = 11, device=None):
         super().__init__()
         self.dim = dim
         
