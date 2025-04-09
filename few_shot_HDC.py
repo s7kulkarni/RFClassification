@@ -78,7 +78,7 @@ def set_seed(seed):
 
 
 class RFFEncoder(torch.nn.Module):
-    def __init__(self, fdim: int, dim: int = 1024, bw: float = 100, seed: int = 11, device=None):
+    def __init__(self, fdim: int, dim: int = 1024, bw: float = 100, seed: int = 86, device=None):
         super().__init__()
         self.dim = dim
         
@@ -190,7 +190,7 @@ which_dataset = 'dronerf'
 output_tensor = False
 in_features = 2049
 DIMENSIONS = 10000
-seed = 11
+seed = 86
 
 print('Loading DroneRF Dataset')
 highlow = 'L'
