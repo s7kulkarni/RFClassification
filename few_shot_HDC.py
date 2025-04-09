@@ -287,7 +287,7 @@ for fold, (train_idx, test_idx) in enumerate(skf.split(X_tensor, Y_tensor)):
 
 
     # encode = RandomProjectionEncoder(DIMENSIONS, in_features).to(device)
-    encode = RFFEncoder(in_features, DIMENSIONS)
+    encode = RFFEncoder(in_features, DIMENSIONS).to(device)
     model = Centroid(DIMENSIONS, len(label_encoder.classes_)).to(device)
 
     
