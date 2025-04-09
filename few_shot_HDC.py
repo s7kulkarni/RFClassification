@@ -103,7 +103,7 @@ class RFFEncoder(torch.nn.Module):
         proj += self.bias
         
         # Apply the cosine transformation and scaling
-        proj = torch.cos(proj) * torch.sqrt(2 / self.dim)
+        proj = torch.cos(proj) * torch.sqrt(torch.tensor(2.0) / self.dim)
         
         proj = torch.sign(proj)
         proj = proj.unsqueeze(0)
