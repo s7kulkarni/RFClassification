@@ -78,34 +78,44 @@ def set_seed(seed):
 
 
 class RFFEncoder(torch.nn.Module):
-    def __init__(self, fdim: int, dim: int = 1024, bw: float = 1.0, seed: int = 11):
+    def __init__(self, fdim: int, dim: int = 1024, bw: float = 1.0, seed: int = 11, device=None):
         super().__init__()
         self.dim = dim
+        
+        if device is None:
+            device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        
+        # Set random seed for reproducibility
         torch.manual_seed(seed)
-
+        
         # Covariance matrix for the random projection
-        cov = torch.eye(fdim) * (fdim / (bw**2))
+        cov = torch.eye(fdim, device=device) * (fdim / (bw**2))
         
-        # Random projection matrix (using multivariate normal)
-        self.projection = torch.distributions.multivariate_normal.MultivariateNormal(
-            torch.zeros(fdim), cov
-        ).sample((dim,))
+        # Create mean vector (zeros)
+        mean = torch.zeros(fdim, device=device)
         
-        # Random bias between 0 and 2 * pi
-        self.bias = torch.rand(dim) * 2 * torch.pi
-
+        # Sample from multivariate normal for each row
+        mvn = torch.distributions.MultivariateNormal(mean, cov)
+        projection = mvn.sample((dim,))
+        
+        # Register as parameters
+        self.projection = nn.Parameter(projection, requires_grad=False)
+        self.bias = nn.Parameter(torch.rand(dim, device=device) * 2 * torch.pi, requires_grad=False)
+        
         self.flatten = torch.nn.Flatten()
     
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         x = self.flatten(x)
         x = x.squeeze(0)
         
-        proj = torch.matmul(x, self.projection.T)  # Equivalent to einsum in the original code
-        proj += self.bias
+        # Matrix multiplication (equivalent to einsum in JAX)
+        proj = torch.matmul(x, self.projection.transpose(0, 1))
+        proj = proj + self.bias
         
-        # Apply the cosine transformation and scaling
-        proj = torch.cos(proj) * torch.sqrt(torch.tensor(2.0) / self.dim)
+        # Apply cosine and scaling
+        proj = torch.cos(proj) * torch.sqrt(torch.tensor(2.0, device=proj.device) / self.dim)
         
+        # Apply sign function and add back batch dimension
         proj = torch.sign(proj)
         proj = proj.unsqueeze(0)
         
