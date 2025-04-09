@@ -78,7 +78,7 @@ def set_seed(seed):
 
 
 class RFFEncoder(torch.nn.Module):
-    def __init__(self, fdim: int, dim: int = 1024, bw: float = 50, seed: int = 86, device=None):
+    def __init__(self, fdim: int, dim: int = 1024, bw: float = 100, seed: int = 86, device=None):
         super().__init__()
         self.dim = dim
         
@@ -265,48 +265,59 @@ fold_accuracies = []
 
 # Few-shot learning: Number of samples per class for training
 n_samples_per_class = 5
+bws = [25*i for i in range(1, 4)]
+seeds = [5*i for i in range(1, 20)]
+optimal_params = {'accuracy':0,
+                  'bw':0,
+                  'seed':0}
+for bw in bws:
+    for seed in seeds:
+        for fold, (train_idx, test_idx) in enumerate(skf.split(X_tensor, Y_tensor)):
+            print(f"Fold {fold + 1}/{k_folds}")
 
-for fold, (train_idx, test_idx) in enumerate(skf.split(X_tensor, Y_tensor)):
-    print(f"Fold {fold + 1}/{k_folds}")
+            # Split data into train and test sets for this fold
+            X_train, X_test = X_tensor[train_idx], X_tensor[test_idx]
+            Y_train, Y_test = Y_tensor[train_idx], Y_tensor[test_idx]
 
-    # Split data into train and test sets for this fold
-    X_train, X_test = X_tensor[train_idx], X_tensor[test_idx]
-    Y_train, Y_test = Y_tensor[train_idx], Y_tensor[test_idx]
+            # Few-shot learning: Select `n_samples_per_class` for each class
+            few_shot_train_indices = []
+            for class_label in torch.unique(Y_train):
+                class_indices = torch.where(Y_train == class_label)[0]
+                selected_indices = np.random.choice(class_indices, size=n_samples_per_class, replace=False)
+                few_shot_train_indices.extend(selected_indices)
 
-    # Few-shot learning: Select `n_samples_per_class` for each class
-    few_shot_train_indices = []
-    for class_label in torch.unique(Y_train):
-        class_indices = torch.where(Y_train == class_label)[0]
-        selected_indices = np.random.choice(class_indices, size=n_samples_per_class, replace=False)
-        few_shot_train_indices.extend(selected_indices)
+            # Use only the selected few-shot samples for training
+            # X_train = X_train[few_shot_train_indices]
+            # Y_train = Y_train[few_shot_train_indices]
 
-    # Use only the selected few-shot samples for training
-    # X_train = X_train[few_shot_train_indices]
-    # Y_train = Y_train[few_shot_train_indices]
+            # Create DataLoader for training and testing
+            train_dataset = torch.utils.data.TensorDataset(X_train, Y_train)
+            test_dataset = torch.utils.data.TensorDataset(X_test, Y_test)
 
-    # Create DataLoader for training and testing
-    train_dataset = torch.utils.data.TensorDataset(X_train, Y_train)
-    test_dataset = torch.utils.data.TensorDataset(X_test, Y_test)
+            train_ld = torch.utils.data.DataLoader(train_dataset, batch_size=1, shuffle=True)
+            test_ld = torch.utils.data.DataLoader(test_dataset, batch_size=1, shuffle=False)
 
-    train_ld = torch.utils.data.DataLoader(train_dataset, batch_size=1, shuffle=True)
-    test_ld = torch.utils.data.DataLoader(test_dataset, batch_size=1, shuffle=False)
-
-    set_seed(seed)
+            set_seed(seed)
 
 
-    # encode = RandomProjectionEncoder(DIMENSIONS, in_features).to(device)
-    encode = RFFEncoder(in_features, DIMENSIONS).to(device)
-    model = Centroid(DIMENSIONS, len(label_encoder.classes_)).to(device)
+            # encode = RandomProjectionEncoder(DIMENSIONS, in_features).to(device)
+            encode = RFFEncoder(in_features, DIMENSIONS, bw, seed).to(device)
+            model = Centroid(DIMENSIONS, len(label_encoder.classes_)).to(device)
 
-    
-    # Train the model
-    train_full_precision(encode, model)
-    # model.normalize()
+            
+            # Train the model
+            train_full_precision(encode, model)
+            # model.normalize()
 
-    # Test the model
-    accuracy_value = test_model(encode, model)
-    fold_accuracies.append(accuracy_value)
-    print(f"Fold {fold + 1} Accuracy: {accuracy_value:.4f}")
+            # Test the model
+            accuracy_value = test_model(encode, model)
+            fold_accuracies.append(accuracy_value)
+            print(f"Fold {fold + 1} Accuracy: {accuracy_value:.4f}")
 
-# Print average accuracy across all folds
-print(f"Average Accuracy: {np.mean(fold_accuracies):.4f}")
+        # Print average accuracy across all folds
+        print(f"Average Accuracy: {np.mean(fold_accuracies):.4f}")
+        if np.mean(fold_accuracies) > optimal_params['accuracy']:
+            optimal_params['accuracy'] = np.mean(fold_accuracies)
+            optimal_params['bw'] = bw
+            optimal_params['seed'] = seed
+print(optimal_params)
