@@ -98,6 +98,7 @@ class RFFEncoder(torch.nn.Module):
     
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         x = self.flatten(x)
+        x = x.squeeze(0)
         
         proj = torch.matmul(x, self.projection.T)  # Equivalent to einsum in the original code
         proj += self.bias
