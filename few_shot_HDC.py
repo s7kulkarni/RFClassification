@@ -77,6 +77,39 @@ def set_seed(seed):
     torch.backends.cudnn.deterministic = True  # Ensure reproducibility if using GPU
 
 
+class RFFEncoder(torch.nn.Module):
+    def __init__(self, fdim: int, dim: int = 1024, bw: float = 1.0, seed: int = 11):
+        super().__init__()
+        self.dim = dim
+        torch.manual_seed(seed)
+
+        # Covariance matrix for the random projection
+        cov = torch.eye(fdim) * (fdim / (bw**2))
+        
+        # Random projection matrix (using multivariate normal)
+        self.projection = torch.distributions.multivariate_normal.MultivariateNormal(
+            torch.zeros(fdim), cov
+        ).sample((dim,))
+        
+        # Random bias between 0 and 2 * pi
+        self.bias = torch.rand(dim) * 2 * torch.pi
+
+        self.flatten = torch.nn.Flatten()
+    
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        x = self.flatten(x)
+        
+        proj = torch.matmul(x, self.projection.T)  # Equivalent to einsum in the original code
+        proj += self.bias
+        
+        # Apply the cosine transformation and scaling
+        proj = torch.cos(proj) * torch.sqrt(2 / self.dim)
+        
+        proj = torch.sign(proj)
+        proj = proj.unsqueeze(0)
+        
+        return proj
+
 # Random Projection Encoder
 class RandomProjectionEncoder(nn.Module):
     def __init__(self, out_features, in_features):
@@ -131,13 +164,13 @@ feat_name = 'PSD'
 t_seg = 250 #ms
 n_per_seg = 4096
 interferences = ['WIFI', 'BLUE', 'BOTH', 'CLEAN']
-output_name = 'modes'
+output_name = 'drones'
 norm_ratio = '05' # 0.xxx mapped to xxx
 feat_format = 'ARR'
 which_dataset = 'dronerf'
 output_tensor = False
 in_features = 2049
-DIMENSIONS = 20000
+DIMENSIONS = 10000
 seed = 11
 
 print('Loading DroneRF Dataset')
@@ -242,7 +275,8 @@ for fold, (train_idx, test_idx) in enumerate(skf.split(X_tensor, Y_tensor)):
     set_seed(seed)
 
 
-    encode = RandomProjectionEncoder(DIMENSIONS, in_features).to(device)
+    # encode = RandomProjectionEncoder(DIMENSIONS, in_features).to(device)
+    encode = RFFEncoder(in_features, DIMENSIONS)
     model = Centroid(DIMENSIONS, len(label_encoder.classes_)).to(device)
 
     
