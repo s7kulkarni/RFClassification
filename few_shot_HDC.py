@@ -120,7 +120,7 @@ class RFFEncoder(torch.nn.Module):
         proj = torch.cos(proj) * torch.sqrt(torch.tensor(2.0, device=proj.device) / self.dim)
         
         # Apply sign function and add back batch dimension
-        proj = torch.sign(proj)
+        # proj = torch.sign(proj)
         proj = proj.unsqueeze(0)
         
         # Check for zero vectors (debugging)
@@ -265,8 +265,8 @@ fold_accuracies = []
 
 # Few-shot learning: Number of samples per class for training
 n_samples_per_class = 5
-bws = [25]
-seeds = [20]
+bws = [0.25*i for i in range(1, 401)]
+seeds = [86]
 optimal_params = {'accuracy':0,
                   'bw':0,
                   'seed':0}
