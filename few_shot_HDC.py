@@ -307,7 +307,7 @@ for bw in bws:
             
             # Train the model
             train_full_precision(encode, model)
-            # model.normalize()
+            model.normalize()
 
             # Test the model
             accuracy_value = test_model(encode, model)
