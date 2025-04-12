@@ -165,7 +165,7 @@ def train_full_precision(encode, model):
             # Encode the samples using the random projection matrix
             samples_hv = encode(samples)
             # Add the encoded hypervectors to the model
-            model.add(samples_hv, labels)
+            model.add_online(samples_hv, labels)
 
 def test_model(encode, model):
     accuracy = torchmetrics.Accuracy("multiclass", num_classes=len(label_encoder.classes_)).to(device)
