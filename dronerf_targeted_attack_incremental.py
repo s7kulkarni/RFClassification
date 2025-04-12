@@ -57,6 +57,9 @@ def compute_dft_average_streaming(main_folder, t_seg, chunk_size=1000,
     data_gen = load_dronerf_raw_stream(main_folder, t_seg, chunk_size=chunk_size, stream=True)
 
     for chunk_idx, (X_chunk, y_binary, y4, y10) in enumerate(data_gen):
+        if start_index > 218:
+            print("Already processed all chunks, proceeding")
+            break
         if chunk_idx < start_index:
             print("skipping chunk ", chunk_idx)
             continue
