@@ -71,10 +71,10 @@ def compute_dft_average_streaming(main_folder, t_seg, chunk_size=1000,
         def update_avg_dict(avg_dict, dfts_chunk, labels_chunk):
             for label in np.unique(labels_chunk):
                 mask = (labels_chunk == label)
-                label_dfts = dfts_chunk[mask]
+                label_dfts = dfts_chunk  # Use entire chunk since all have same label
                 if label not in avg_dict:
-                    avg_dict[label] = {'sum': np.zeros_like(label_dfts[0]), 'count': 0}
-                avg_dict[label]['sum'] += np.sum(label_dfts, axis=0)
+                    avg_dict[label] = {'sum': np.zeros_like(label_dfts), 'count': 0}
+                avg_dict[label]['sum'] += label_dfts * mask.sum()  # Scale by count
                 avg_dict[label]['count'] += mask.sum()
             return avg_dict
 
