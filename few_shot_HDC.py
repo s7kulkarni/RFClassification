@@ -265,7 +265,7 @@ fold_accuracies = []
 
 # Few-shot learning: Number of samples per class for training
 n_samples_per_class = 5
-bws = [0.25*i for i in range(1, 401)]
+bws = [0.25*i for i in range(1, 2)]
 seeds = [86]
 optimal_params = {'accuracy':0,
                   'bw':0,
@@ -300,8 +300,8 @@ for bw in bws:
             set_seed(seed)
 
 
-            # encode = RandomProjectionEncoder(DIMENSIONS, in_features).to(device)
-            encode = RFFEncoder(in_features, DIMENSIONS, bw, seed).to(device)
+            encode = RandomProjectionEncoder(DIMENSIONS, in_features).to(device)
+            # encode = RFFEncoder(in_features, DIMENSIONS, bw, seed).to(device)
             model = Centroid(DIMENSIONS, len(label_encoder.classes_)).to(device)
 
             
