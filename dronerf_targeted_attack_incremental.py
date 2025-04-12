@@ -229,5 +229,4 @@ binary_avg, fourclass_avg, tenclass_avg = compute_dft_average_streaming(
 
 process_and_save_incrementally(
     avg_dft_dict=fourclass_avg,  # Use 4-class DFT averages
-    target_label_type='fourclass'
 )
