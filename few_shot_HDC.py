@@ -143,7 +143,7 @@ class RandomProjectionEncoder(nn.Module):
 
         ## NEW DYNAMIC THRESHOLDING
         # Tunable parameter k
-        k = 0.5
+        k = 0
         mu = sample_hv.mean()
         sigma = sample_hv.std(unbiased=False)  # use unbiased=False for population std
         threshold = mu + k * sigma
