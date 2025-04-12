@@ -140,7 +140,17 @@ class RandomProjectionEncoder(nn.Module):
         x = self.flatten(x)
         x = x.squeeze(0)
         sample_hv = torch.matmul(x, self.projection_matrix)
-        sample_hv = torch.sign(sample_hv)
+
+        ## NEW DYNAMIC THRESHOLDING
+        # Tunable parameter k
+        k = 0.5
+        mu = sample_hv.mean()
+        sigma = sample_hv.std(unbiased=False)  # use unbiased=False for population std
+        threshold = mu + k * sigma
+        sample_hv = torch.sign(sample_hv - threshold)
+        ## NEW DYNAMIC THRESHOLDING END
+
+        # sample_hv = torch.sign(sample_hv)
         sample_hv = sample_hv.unsqueeze(0)
         return sample_hv
 
