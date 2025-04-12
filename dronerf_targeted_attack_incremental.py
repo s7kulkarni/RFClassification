@@ -58,6 +58,7 @@ def compute_dft_average_streaming(main_folder, t_seg, chunk_size=1000,
 
     for chunk_idx, (X_chunk, y_binary, y4, y10) in enumerate(data_gen):
         if chunk_idx < start_index:
+            print("skipping chunk ", chunk_idx)
             continue
         print(f"Processing chunk {chunk_idx}")
 
@@ -88,6 +89,7 @@ def compute_dft_average_streaming(main_folder, t_seg, chunk_size=1000,
                 fourclass_avg_dfts=fourclass_avg_dfts,
                 tenclass_avg_dfts=tenclass_avg_dfts,
                 start_index=chunk_idx + 1)
+    print("DFT avg calculation done")
 
     # Finalize averages
     def finalize_avg(avg_dict):
@@ -106,6 +108,7 @@ def process_and_save_incrementally(avg_dft_dict, checkpoint_dir='/home/zebra/shr
     Processes drone RF data incrementally with adversarial/random perturbations,
     calculates PSD, and saves results incrementally.
     """
+    print('starting process and save...')
     # Checkpoint setup (unchanged)
     if not os.path.exists(checkpoint_dir):
         os.makedirs(checkpoint_dir)
