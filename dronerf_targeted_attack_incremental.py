@@ -101,7 +101,7 @@ def compute_dft_average_streaming(main_folder, t_seg, chunk_size=1000,
     return binary_avg, fourclass_avg, tenclass_avg
 
 
-def process_and_save_incrementally(checkpoint_dir='/home/zebra/shriniwas/checkpoints_attack'):
+def process_and_save_incrementally(avg_dft_dict, checkpoint_dir='/home/zebra/shriniwas/checkpoints_attack'):
     """
     Processes drone RF data incrementally with adversarial/random perturbations,
     calculates PSD, and saves results incrementally.
@@ -119,6 +119,10 @@ def process_and_save_incrementally(checkpoint_dir='/home/zebra/shriniwas/checkpo
         last_processed_file = ""
         start_idx = 0
 
+    if avg_dft_dict is None:
+        raise ValueError("avg_dft_dict must be provided")
+    print("Avg values obtained, on to processing")
+
     # File collection (unchanged)
     high_freq_files = []
     low_freq_files = []
@@ -132,12 +136,10 @@ def process_and_save_incrementally(checkpoint_dir='/home/zebra/shriniwas/checkpo
     high_freq_files.sort()
     low_freq_files.sort()
 
-    # Load average DFTs (NEW but necessary)
-    with open('/path/to/saved_avg_dfts.pkl', 'rb') as f:
-        avg_dft_dict = pickle.load(f)  # Format: {label: avg_dft_array}
 
     # Main processing loop (modified only where needed)
     for i in range(start_idx, len(high_freq_files)):
+        print(i, 'of', len(high_freq_files))
         high_freq_file = high_freq_files[i]
         low_freq_file = next((lf for lf in low_freq_files 
                            if lf[0][:5] + lf[0][6:] == high_freq_file[0][:5] + high_freq_file[0][6:]), None)
@@ -221,6 +223,5 @@ binary_avg, fourclass_avg, tenclass_avg = compute_dft_average_streaming(
 
 process_and_save_incrementally(
     avg_dft_dict=fourclass_avg,  # Use 4-class DFT averages
-    epsilon=0.4, 
     target_label_type='fourclass'
 )
