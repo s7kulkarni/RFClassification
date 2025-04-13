@@ -88,7 +88,7 @@ if which_dataset == 'dronerf':
     perturbed_dataset = DroneRFTorchPerturbed(dronerf_feat_path, feat_name, t_seg, n_per_seg,
                         feat_format, output_name, output_tensor, highlow, norm_ratio, perturbation_type, output_name)
     perturbed_dataset_random = DroneRFTorchPerturbed(dronerf_feat_path, feat_name, t_seg, n_per_seg,
-                        feat_format, output_name, output_tensor, highlow, norm_ratio, 'random', output_name)
+                        feat_format, output_name, output_tensor, highlow, '40', 'random', output_name)
 elif which_dataset == 'dronedetect':
     print('Loading DroneDetect Dataset')
     dataset = DroneDetectTorch(dronedetect_feat_path, feat_name, t_seg, n_per_seg, feat_format,
