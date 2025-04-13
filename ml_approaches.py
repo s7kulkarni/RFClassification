@@ -78,7 +78,7 @@ norm_ratio = '40' # 0.xxx mapped to xxx
 feat_format = 'ARR'
 which_dataset = 'dronerf'
 output_tensor = False
-perturbation_type = 'random'
+perturbation_type = 'dft_attack'
 
 if which_dataset == 'dronerf':
     print('Loading DroneRF Dataset')
@@ -87,6 +87,8 @@ if which_dataset == 'dronerf':
                        feat_format, output_name, output_tensor, highlow)
     perturbed_dataset = DroneRFTorchPerturbed(dronerf_feat_path, feat_name, t_seg, n_per_seg,
                         feat_format, output_name, output_tensor, highlow, norm_ratio, perturbation_type, output_name)
+    perturbed_dataset_random = DroneRFTorchPerturbed(dronerf_feat_path, feat_name, t_seg, n_per_seg,
+                        feat_format, output_name, output_tensor, highlow, norm_ratio, 'random', output_name)
 elif which_dataset == 'dronedetect':
     print('Loading DroneDetect Dataset')
     dataset = DroneDetectTorch(dronedetect_feat_path, feat_name, t_seg, n_per_seg, feat_format,
@@ -95,9 +97,20 @@ print("dataset loaded")
 # X_use, y_use = dataset.get_arrays()
 X_use, y_use = get_arrays_efficient(dataset, batch_size=64)
 X_perturbed, y_perturbed = get_arrays_efficient(perturbed_dataset, batch_size=64)
+X_perturbed_rand, y_perturbed_rand = get_arrays_efficient(perturbed_dataset_random, batch_size=64)
 
 print("ARE WE EVEN PERTURBING: ", not np.allclose(X_use, X_perturbed, atol=1e-5))
 
+print("ARE RANDOM AND DFT ATTACK PERTS SAME: ", not np.allclose(X_perturbed_rand, X_perturbed, atol=1e-5))
+
+##### PERTURBATION RATIO
+perturbation = X_perturbed - X_use
+perturbation_norms = np.linalg.norm(perturbation, axis=1)
+original_norms = np.linalg.norm(X_use, axis=1)
+safe_original_norms = np.where(original_norms == 0, 1e-10, original_norms)
+ratios = perturbation_norms / safe_original_norms
+average_ratio = np.mean(ratios)
+print("Average perturbation ratio:", average_ratio)
 ## RAND X_PERT ##
 # max_value = np.max(X_use)
 # X_perturbed = np.random.uniform(0, max_value, size=X_use.shape)
