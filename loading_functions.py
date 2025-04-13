@@ -185,7 +185,7 @@ class DroneRFTorchPerturbed(Dataset):
             sub_folder_name = feat_format+'_'+feat_name+'_'+highlow+'_'+str(seg_len)+'_'+'PERTURBED'+'_'+type+'_'+norm_ratio+'/'
             print(sub_folder_name)
         elif perturbation_type == 'dft_attack' or perturbation_type == 'random':
-            sub_folder_name = feat_format+'_'+feat_name+'_'+highlow+'_'+str(seg_len)+'_'+perturbation_type+'_'+norm_ratio+'/'
+            sub_folder_name = feat_format+'_'+feat_name+'_'+highlow+'_'+str(n_per_seg)+'_'+str(seg_len)+'_'+perturbation_type+'_'+norm_ratio+'/'
             print(sub_folder_name)
         else:
             print(type, feat_format+'_'+feat_name+'_'+highlow+'_'+str(n_per_seg)+'_'+str(seg_len)+'_'+'PERTURBED'+'_'+type+'_'+norm_ratio+'/')
