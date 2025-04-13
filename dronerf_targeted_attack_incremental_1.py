@@ -200,7 +200,7 @@ def process_and_save_incrementally(avg_dft_dict, checkpoint_dir='/home/zebra/shr
 
             F_PSD = []
             for seg in rf_sig_segments:
-                fpsd, Pxx_den = signal.welch(seg[0], fs, window=win_type, nperseg=n_per_seg)
+                fpsd, Pxx_den = signal.welch(seg[1], fs, window=win_type, nperseg=n_per_seg)
                 F_PSD.append(Pxx_den)
 
             # Save to version-specific subfolder (only path modified)
