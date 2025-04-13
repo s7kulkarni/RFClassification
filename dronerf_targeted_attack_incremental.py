@@ -190,7 +190,7 @@ def process_and_save_incrementally(avg_dft_dict, checkpoint_dir='/home/zebra/shr
         
         # 3. Convert to time domain and scale
         perturbation = np.real(np.fft.ifft(delta_fft))
-        ratio = 0.0
+        ratio = 0.4
         perturbation *= ratio / (np.linalg.norm(perturbation)/np.linalg.norm(rf_data_l))
         print('PEERTURBATION NORM', np.linalg.norm(perturbation))
         
