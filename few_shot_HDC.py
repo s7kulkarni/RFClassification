@@ -201,18 +201,19 @@ output_tensor = False
 in_features = 2049
 DIMENSIONS = 10000
 seed = 86
+perturbation_type = 'dft_attack'
 
 print('Loading DroneRF Dataset')
 highlow = 'L'
 dataset = DroneRFTorch(dronerf_feat_path, feat_name, t_seg, n_per_seg,
                     feat_format, output_name, output_tensor, highlow)
-# perturbed_dataset = DroneRFTorchPerturbed(dronerf_feat_path, feat_name, t_seg, n_per_seg,
-#                     feat_format, output_name, output_tensor, highlow, norm_ratio, output_name)
+perturbed_dataset = DroneRFTorchPerturbed(dronerf_feat_path, feat_name, t_seg, n_per_seg,
+                    feat_format, output_name, output_tensor, highlow, norm_ratio, perturbation_type, output_name)
 print("dataset loaded")
 # X_use, y_use = dataset.get_arrays()
 X, Y = get_arrays_efficient(dataset, batch_size=64)
-# X_perturbed, Y_perturbed = get_arrays_efficient(perturbed_dataset, batch_size=64)
-# print("SHAPES ", X.shape, Y.shape, X_perturbed.shape, Y_perturbed.shape)
+X_perturbed, Y_perturbed = get_arrays_efficient(perturbed_dataset, batch_size=64)
+print("SHAPES ", X.shape, Y.shape, X_perturbed.shape, Y_perturbed.shape)
 
 ## RAND X_PERT ##
 # max_value = np.max(X)
@@ -262,9 +263,9 @@ Y_int = label_encoder.fit_transform(Y)
 X_tensor = torch.tensor(X, dtype=torch.float32)  # (219, 4097)
 Y_tensor = torch.tensor(Y_int, dtype=torch.long)  # (219,)
 
-# Y_perturbed = label_encoder.fit_transform(Y_perturbed)
-# X_perturbed = torch.tensor(X_perturbed, dtype=torch.float32)  # (219, 4097)
-# Y_perturbed = torch.tensor(Y_perturbed, dtype=torch.long)  # (219,)
+Y_perturbed = label_encoder.fit_transform(Y_perturbed)
+X_perturbed = torch.tensor(X_perturbed, dtype=torch.float32)  # (219, 4097)
+Y_perturbed = torch.tensor(Y_perturbed, dtype=torch.long)  # (219,)
 
 # K-Fold Cross-Validation
 k_folds = 5  # You can change this
@@ -302,7 +303,7 @@ for bw in bws:
 
             # Create DataLoader for training and testing
             train_dataset = torch.utils.data.TensorDataset(X_train, Y_train)
-            test_dataset = torch.utils.data.TensorDataset(X_test, Y_test)
+            test_dataset = torch.utils.data.TensorDataset(X_perturbed[test_idx], Y_perturbed[test_idx])
 
             train_ld = torch.utils.data.DataLoader(train_dataset, batch_size=1, shuffle=True)
             test_ld = torch.utils.data.DataLoader(test_dataset, batch_size=1, shuffle=False)

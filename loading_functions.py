@@ -172,7 +172,7 @@ def is_interference(file_name, int_list):
 ### 2. DroneRF DATASET ### 
 class DroneRFTorchPerturbed(Dataset):
 #     feat_folder, feat_name, seg_len, n_per_seg, highlow, output_feat
-     def __init__(self, feat_folder, feat_name, seg_len, n_per_seg, feat_format, output_feat, output_tensor, highlow, norm_ratio, type='bi', to_norm=False):
+     def __init__(self, feat_folder, feat_name, seg_len, n_per_seg, feat_format, output_feat, output_tensor, highlow, norm_ratio, perturbation_type, type='bi', to_norm=False):
         self.feat_format = feat_format
         self.output_feat = output_feat
         self.output_tensor = output_tensor
@@ -183,6 +183,9 @@ class DroneRFTorchPerturbed(Dataset):
             sub_folder_name = feat_format+'_'+feat_name+'_'+str(10000)+'_'+str(seg_len)+'/'
         elif feat_name == 'LFCC':
             sub_folder_name = feat_format+'_'+feat_name+'_'+highlow+'_'+str(seg_len)+'_'+'PERTURBED'+'_'+type+'_'+norm_ratio+'/'
+            print(sub_folder_name)
+        elif perturbation_type == 'dft_attack' or perturbation_type == 'random':
+            sub_folder_name = feat_format+'_'+feat_name+'_'+highlow+'_'+str(seg_len)+'_'+perturbation_type+'_'+norm_ratio+'/'
             print(sub_folder_name)
         else:
             print(type, feat_format+'_'+feat_name+'_'+highlow+'_'+str(n_per_seg)+'_'+str(seg_len)+'_'+'PERTURBED'+'_'+type+'_'+norm_ratio+'/')
