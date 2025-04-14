@@ -181,7 +181,7 @@ def process_and_save_incrementally(avg_dft_dict, checkpoint_dir='/home/zebra/shr
         current_label = int(low_freq_file[0][:3])  # Using 4-class label
         false_labels = [l for l in avg_dft_dict.keys() if l != current_label]
         target_label = np.random.choice(false_labels)
-        
+        print("CURRENT N TARGET LABELS ", current_label, target_label)
         # 1. Get current signal's DFT
         current_dft = np.fft.fft(rf_data_l)
         
