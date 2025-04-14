@@ -100,11 +100,11 @@ X_perturbed, y_perturbed = get_arrays_efficient(perturbed_dataset, batch_size=64
 X_perturbed_rand, y_perturbed_rand = get_arrays_efficient(perturbed_dataset_random, batch_size=64)
 
 ##### RANDOM PERTURBATION GENERATION
-original_norms = torch.norm(X_use, dim=1)
+original_norms = np.linalg.norm(X_use, axis=1)
 average_norm = original_norms.mean()          # scalar
-perturbation = torch.randn(X_use.shape[1])  # shape (2049,)
-perturbation = perturbation / torch.norm(perturbation)  # unit norm
-perturbation = perturbation * (0.4 * average_norm)      # scale to 40%
+perturbation = np.random.randn(X_use.shape[1])  # shape (2049,)
+perturbation = perturbation / np.linalg.norm(perturbation)  # unit norm
+perturbation = perturbation * (0.4 * average_norm)           # scale to 40%
 X_perturbed_rand = X_use + perturbation  # broadcasting works here
 
 print("ARE WE EVEN PERTURBING: ", not np.allclose(X_use, X_perturbed, atol=1e-5))

@@ -218,10 +218,10 @@ print("ARE WE EVEN PERTURBING: ", not np.allclose(X, X_perturbed, atol=1e-5))
 
 
 ##### RANDOM PERTURBATION GENERATION
-original_norms = torch.norm(X, dim=1)
+original_norms = np.linalg.norm(X, axis=1)
 average_norm = original_norms.mean()          # scalar
-perturbation = torch.randn(X.shape[1])  # shape (2049,)
-perturbation = perturbation / torch.norm(perturbation)  # unit norm
+perturbation = np.random.randn(X.shape[1])  # shape (2049,)
+perturbation = perturbation / np.linalg.norm(perturbation)  # unit norm
 perturbation = perturbation * (0.4 * average_norm)      # scale to 40%
 X_perturbed_rand = X + perturbation  # broadcasting works here
 # ################# DUMMY DATA
