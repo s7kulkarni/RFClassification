@@ -106,15 +106,16 @@ def compute_dft_average_streaming(main_folder, t_seg, chunk_size=1000,
     return binary_avg, fourclass_avg, tenclass_avg
 
 
-def process_and_save_incrementally(avg_dft_dict, checkpoint_dir='/home/zebra/shriniwas/checkpoints_attack_1'):
+def process_and_save_incrementally(avg_dft_dict, checkpoint_dir='/home/zebra/shriniwas/checkpoints_attack'):
     """
-    Processes drone RF data incrementally with adversarial/random perturbations,
-    calculates PSD, and saves results incrementally.
+    Processes drone RF data incrementally, calculates PSD, and saves results incrementally.
     """
     print('starting process and save...')
     # Checkpoint setup (unchanged)
     if not os.path.exists(checkpoint_dir):
         os.makedirs(checkpoint_dir)
+
+    # Load checkpoint if exists
     checkpoint_file = os.path.join(checkpoint_dir, 'checkpoint.pkl')
     if os.path.exists(checkpoint_file):
         with open(checkpoint_file, 'rb') as f:
@@ -142,26 +143,40 @@ def process_and_save_incrementally(avg_dft_dict, checkpoint_dir='/home/zebra/shr
     high_freq_files.sort()
     low_freq_files.sort()
 
+    print("TOTAL HIGH/LOW FREQ FILES", len(high_freq_files))
 
-    # Main processing loop (modified only where needed)
+    # Process files incrementally
     for i in range(start_idx, len(high_freq_files)):
         print(i, 'of', len(high_freq_files))
         high_freq_file = high_freq_files[i]
-        low_freq_file = next((lf for lf in low_freq_files 
-                           if lf[0][:5] + lf[0][6:] == high_freq_file[0][:5] + high_freq_file[0][6:]), None)
+        low_freq_file = None
+
+        # Find corresponding low-frequency file
+        for lff in low_freq_files:
+            if lff[0][:5] + lff[0][6:] == high_freq_file[0][:5] + high_freq_file[0][6:]:
+                low_freq_file = lff
+                break
+
         if not low_freq_file:
             print(f"No matching low-frequency file for {high_freq_file[0]}")
             continue
 
-        # Data loading (unchanged)
+        # Load high-frequency data
         try:
             rf_data_h = pd.read_csv(high_freq_file[1], header=None).values.flatten()
-            rf_data_l = pd.read_csv(low_freq_file[1], header=None).values.flatten()
-            if len(rf_data_h) != len(rf_data_l):
-                print(f"Length mismatch: {high_freq_file[0]}")
-                continue
         except Exception as e:
             print(f"EXCEPTION loading {high_freq_file[0]}: {e}")
+            continue
+
+        # Load low-frequency data
+        try:
+            rf_data_l = pd.read_csv(low_freq_file[1], header=None).values.flatten()
+        except Exception as e:
+            print(f"EXCEPTION loading {low_freq_file[0]}: {e}")
+            continue
+
+        if len(rf_data_h) != len(rf_data_l):
+            print(f"Length mismatch: {high_freq_file[0]} and {low_freq_file[0]}")
             continue
 
         # ===== PERTURBATION GENERATION (MODIFIED CORE LOGIC) =====
@@ -179,6 +194,7 @@ def process_and_save_incrementally(avg_dft_dict, checkpoint_dir='/home/zebra/shr
         perturbation = np.real(np.fft.ifft(delta_fft))
         ratio = 0.04
         perturbation *= ratio / (np.linalg.norm(perturbation)/np.linalg.norm(rf_data_l))
+        print('PEERTURBATION NORM', np.linalg.norm(perturbation))
         
         # 4. Generate random perturbation with same power
         random_pert = np.random.randn(len(perturbation))
@@ -187,6 +203,7 @@ def process_and_save_incrementally(avg_dft_dict, checkpoint_dir='/home/zebra/shr
         # Apply perturbations
         rf_data_l_adv = rf_data_l + perturbation
         rf_data_l_rand = rf_data_l + random_pert
+        print('isPerturbed : ', not np.allclose(rf_data_l, rf_data_l_adv, atol=1e-5))
         # ===== END MODIFIED SECTION =====
 
         # Process all three versions
