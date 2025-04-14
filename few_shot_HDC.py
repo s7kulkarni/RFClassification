@@ -223,7 +223,8 @@ average_norm = original_norms.mean()          # scalar
 perturbation = np.random.randn(X.shape[1])  # shape (2049,)
 perturbation = perturbation / np.linalg.norm(perturbation)  # unit norm
 perturbation = perturbation * (0.4 * average_norm)      # scale to 40%
-X_perturbed_rand = X + perturbation  # broadcasting works here
+X_perturbed_rand = X + perturbation[np.newaxis, :]
+X_perturbed_rand = torch.tensor(X_perturbed_rand, dtype=torch.float32)  # (219, 4097)
 # ################# DUMMY DATA
 # def generate_dummy_data(num_samples=10, num_features=2049):
 #     """
