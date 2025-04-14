@@ -106,7 +106,7 @@ def compute_dft_average_streaming(main_folder, t_seg, chunk_size=1000,
     return binary_avg, fourclass_avg, tenclass_avg
 
 
-def process_and_save_incrementally(avg_dft_dict, checkpoint_dir='/home/zebra/shriniwas/checkpoints_attack'):
+def process_and_save_incrementally(avg_dft_dict, checkpoint_dir='/home/zebra/shriniwas/checkpoints_attack_1'):
     """
     Processes drone RF data incrementally, calculates PSD, and saves results incrementally.
     """
