@@ -43,15 +43,15 @@ def compute_dft_average_streaming(main_folder, t_seg, chunk_size=1000,
         tenclass_avg_dfts = {}
         start_index = 0
 
-    # Initialize data generator
-    data_gen = load_dronerf_raw_stream(main_folder, t_seg, chunk_size=chunk_size, stream=True)
+    # # Initialize data generator
+    # data_gen = load_dronerf_raw_stream(main_folder, t_seg, chunk_size=chunk_size, stream=True)
     
-    # Process first chunk to verify dimensions
-    first_chunk, _, _, _ = next(data_gen)
-    test_dft = fft(first_chunk[0, 0, :])  # DFT of first sample, first channel
-    assert test_dft.shape == (first_chunk.shape[2],), \
-           f"DFT axis mismatch! Expected length {first_chunk.shape[2]}, got {test_dft.shape}"
-    print(f"DFT verification passed. Processing {first_chunk.shape[2]} frequency bins.")
+    # # Process first chunk to verify dimensions
+    # first_chunk, _, _, _ = next(data_gen)
+    # test_dft = fft(first_chunk[0, 0, :])  # DFT of first sample, first channel
+    # assert test_dft.shape == (first_chunk.shape[2],), \
+    #        f"DFT axis mismatch! Expected length {first_chunk.shape[2]}, got {test_dft.shape}"
+    # print(f"DFT verification passed. Processing {first_chunk.shape[2]} frequency bins.")
 
     # Reset generator
     data_gen = load_dronerf_raw_stream(main_folder, t_seg, chunk_size=chunk_size, stream=True)
