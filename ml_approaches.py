@@ -78,7 +78,7 @@ norm_ratio = '40' # 0.xxx mapped to xxx
 feat_format = 'ARR'
 which_dataset = 'dronerf'
 output_tensor = False
-perturbation_type = 'dft_attack'
+perturbation_type = 'random'
 
 if which_dataset == 'dronerf':
     print('Loading DroneRF Dataset')
@@ -184,8 +184,8 @@ for fold, (train_idx, test_idx) in enumerate(skf.split(X_use, y_use)):
 
 
     svc.fit(X_train, Y_train)
-    Y_pred = svc.predict(X_test)
-    accuracy = accuracy_score(Y_pred, Y_test)
+    Y_pred = svc.predict(X_perturbed[test_idx])
+    accuracy = accuracy_score(Y_pred, y_perturbed[test_idx])
     print(f"Fold {fold + 1} Accuracy: {accuracy:.4f}")
     fold_accuracies.append(accuracy)
 
