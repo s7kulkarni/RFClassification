@@ -216,11 +216,11 @@ X_perturbed, Y_perturbed = get_arrays_efficient(perturbed_dataset, batch_size=64
 print("SHAPES ", X.shape, Y.shape, X_perturbed.shape, Y_perturbed.shape)
 print("ARE WE EVEN PERTURBING: ", not np.allclose(X, X_perturbed, atol=1e-5))
 
-# perturbation = X_perturbed - X
-# perturbation_norm = np.linalg.norm(perturbation, axis=1).mean()
-# original_norm = np.linalg.norm(X, axis=1).mean()
-# average_ratio = perturbation_norm / original_norm
-# print("Average perturbation ratio (mean-to-mean):", average_ratio)
+perturbation = X_perturbed - X
+perturbation_norm = np.linalg.norm(perturbation, axis=1).mean()
+original_norm = np.linalg.norm(X, axis=1).mean()
+average_ratio = perturbation_norm / original_norm
+print("Average perturbation ratio (mean-to-mean):", average_ratio)
 
 ##### RANDOM PERTURBATION GENERATION
 original_norms = np.linalg.norm(X, axis=1)
@@ -314,7 +314,7 @@ for bw in bws:
 
             # Create DataLoader for training and testing
             train_dataset = torch.utils.data.TensorDataset(X_train, Y_train)
-            test_dataset = torch.utils.data.TensorDataset(X_perturbed_rand[test_idx], Y_perturbed[test_idx])
+            test_dataset = torch.utils.data.TensorDataset(X_perturbed[test_idx], Y_perturbed[test_idx])
 
             train_ld = torch.utils.data.DataLoader(train_dataset, batch_size=1, shuffle=True)
             test_ld = torch.utils.data.DataLoader(test_dataset, batch_size=1, shuffle=False)
