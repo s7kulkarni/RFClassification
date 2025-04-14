@@ -113,12 +113,10 @@ print("ARE RANDOM AND DFT ATTACK PERTS SAME: ", not np.allclose(X_perturbed_rand
 
 ##### PERTURBATION RATIO
 perturbation = X_perturbed_rand - X_use
-perturbation_norms = np.linalg.norm(perturbation, axis=1)
-original_norms = np.linalg.norm(X_use, axis=1)
-safe_original_norms = np.where(original_norms == 0, 1e-10, original_norms)
-ratios = perturbation_norms / safe_original_norms
-average_ratio = np.mean(ratios)
-print("Average perturbation ratio:", average_ratio)
+perturbation_norm = np.linalg.norm(perturbation, axis=1).mean()
+original_norm = np.linalg.norm(X_use, axis=1).mean()
+average_ratio = perturbation_norm / original_norm
+print("Average perturbation ratio (mean-to-mean):", average_ratio)
 
 # X_tmp, y_tmp = dataset.get_arrays()
 
