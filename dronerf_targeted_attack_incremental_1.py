@@ -203,7 +203,9 @@ def process_and_save_incrementally(avg_dft_dict, checkpoint_dir='/home/zebra/shr
         # Apply perturbations
         rf_data_l_adv = rf_data_l + perturbation
         rf_data_l_rand = rf_data_l + random_pert
-        print('isPerturbed : ', not np.allclose(rf_data_l, rf_data_l_adv, atol=1e-5))
+        print('isPerturbed : ', not np.allclose(rf_data_l, rf_data_l_rand, atol=1e-5))
+        print('RAMDOM PERT MAGNITUDE RATIO : ', np.linalg.norm(random_pert) / np.linalg.norm(rf_data_l))
+        exit()
         # ===== END MODIFIED SECTION =====
 
         # Process all three versions
