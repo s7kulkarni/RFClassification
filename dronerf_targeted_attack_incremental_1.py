@@ -192,7 +192,7 @@ def process_and_save_incrementally(avg_dft_dict, checkpoint_dir='/home/zebra/shr
         
         # 3. Convert to time domain and scale
         perturbation = np.real(np.fft.ifft(delta_fft))
-        ratio = 0.04
+        ratio = 0.5
         perturbation *= ratio / (np.linalg.norm(perturbation)/np.linalg.norm(rf_data_l))
         print('PEERTURBATION NORM', np.linalg.norm(perturbation))
         
@@ -205,32 +205,52 @@ def process_and_save_incrementally(avg_dft_dict, checkpoint_dir='/home/zebra/shr
         rf_data_l_rand = rf_data_l + random_pert
         print('isPerturbed : ', not np.allclose(rf_data_l, rf_data_l_rand, atol=1e-5))
         print('RAMDOM PERT MAGNITUDE RATIO : ', np.linalg.norm(random_pert) / np.linalg.norm(rf_data_l))
-        exit()
         # ===== END MODIFIED SECTION =====
 
-        # Process all three versions
-        for data_l, suffix in [(rf_data_l_adv, 'dft_attack'), 
-                              (rf_data_l_rand, 'random')]:
-            # Original processing pipeline (UNCHANGED)
-            rf_sig = np.vstack((rf_data_h, data_l))
-            len_seg = int(t_seg / 1e3 * fs)
-            n_segs = len(rf_data_h) // len_seg
-            rf_sig_segments = np.split(rf_sig[:, :n_segs*len_seg], n_segs, axis=1)
+        
+        print("rf_data_h, rf_data_l shapes ", rf_data_h.shape, rf_data_l.shape)
+        # Stack high and low frequency data
+        rf_sig = np.vstack((rf_data_h, rf_data_l_adv))
+        print("rf_sig shape ", rf_sig.shape)
 
-            F_PSD = []
-            for seg in rf_sig_segments:
-                fpsd, Pxx_den = signal.welch(seg[1], fs, window=win_type, nperseg=n_per_seg)
-                F_PSD.append(Pxx_den)
+        # Segment the data
+        len_seg = int(t_seg / 1e3 * fs)
+        n_segs = len(rf_data_h) // len_seg
+        n_keep = n_segs * len_seg
+        print("len_seg, n_segs, n_keep : ", len_seg, n_segs, n_keep)
 
-            # Save to version-specific subfolder (only path modified)
-            save_path = features_folder+arr_psd_folder+'_'+suffix+'_'+str(int(ratio*100))+'/'
-            save_array_rf(save_path, F_PSD, 
-                         [int(low_freq_file[0][0])]*len(F_PSD),
-                         [int(low_freq_file[0][:3])]*len(F_PSD),
-                         [int(low_freq_file[0][:5])]*len(F_PSD),
-                         'PSD', n_per_seg, i)
+        try:
+            rf_sig_segments = np.split(rf_sig[:, :n_keep], n_segs, axis=1)
+        except Exception as e:
+            print(f"Error splitting {high_freq_file[0]}: {e}")
+            continue
 
-        # Checkpoint update (unchanged)
+        print("rf_sig_segments shape ", len(rf_sig_segments))
+
+        # Process each segment
+        F_PSD = []
+        BILABEL = []
+        DRONELABEL = []
+        MODELALBEL = []
+
+        for seg in rf_sig_segments:
+            # Calculate PSD for high-frequency data (assuming index 0)
+            h_l = 0 if high_low == 'H' else 1
+            fpsd, Pxx_den = signal.welch(seg[h_l], fs, window=win_type, nperseg=n_per_seg)
+            F_PSD.append(Pxx_den)
+
+            # Labels
+            BILABEL.append(int(low_freq_file[0][0]))  # 2-class label
+            DRONELABEL.append(int(low_freq_file[0][:3]))  # 4-class label
+            MODELALBEL.append(int(low_freq_file[0][:5]))  # 10-class label
+        
+        print("len F_PSD and component ", len(F_PSD), F_PSD[0].shape)
+
+        # Save results for this file
+        save_path = features_folder+arr_psd_folder+'_'+'random'+'_'+str(int(ratio*100))+'/'
+        save_array_rf(save_path, F_PSD, BILABEL, DRONELABEL, MODELALBEL, 'PSD', n_per_seg, i)
+
+        # Update checkpoint
         checkpoint = {
             'last_processed_file': high_freq_file[0],
             'last_processed_idx': i
@@ -238,7 +258,39 @@ def process_and_save_incrementally(avg_dft_dict, checkpoint_dir='/home/zebra/shr
         with open(checkpoint_file, 'wb') as f:
             pickle.dump(checkpoint, f)
 
-        print(f"Processed {high_freq_file[0]} with all perturbations")
+        print(f"Processed and saved {high_freq_file[0]}")
+
+        # # Process all versions
+        # for data_l, suffix in [(rf_data_l_adv, 'dft_attack'), 
+        #                       (rf_data_l_rand, 'random')]:
+        #     # Original processing pipeline (UNCHANGED)
+        #     rf_sig = np.vstack((rf_data_h, data_l))
+        #     len_seg = int(t_seg / 1e3 * fs)
+        #     n_segs = len(rf_data_h) // len_seg
+        #     rf_sig_segments = np.split(rf_sig[:, :n_segs*len_seg], n_segs, axis=1)
+
+        #     F_PSD = []
+        #     for seg in rf_sig_segments:
+        #         fpsd, Pxx_den = signal.welch(seg[1], fs, window=win_type, nperseg=n_per_seg)
+        #         F_PSD.append(Pxx_den)
+
+        #     # Save to version-specific subfolder (only path modified)
+        #     save_path = features_folder+arr_psd_folder+'_'+suffix+'_'+str(int(ratio*100))+'/'
+        #     save_array_rf(save_path, F_PSD, 
+        #                  [int(low_freq_file[0][0])]*len(F_PSD),
+        #                  [int(low_freq_file[0][:3])]*len(F_PSD),
+        #                  [int(low_freq_file[0][:5])]*len(F_PSD),
+        #                  'PSD', n_per_seg, i)
+
+        # # Checkpoint update (unchanged)
+        # checkpoint = {
+        #     'last_processed_file': high_freq_file[0],
+        #     'last_processed_idx': i
+        # }
+        # with open(checkpoint_file, 'wb') as f:
+        #     pickle.dump(checkpoint, f)
+
+        # print(f"Processed {high_freq_file[0]} with all perturbations")
 
 binary_avg, fourclass_avg, tenclass_avg = compute_dft_average_streaming(
     main_folder=main_folder,
