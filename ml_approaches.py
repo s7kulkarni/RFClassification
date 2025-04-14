@@ -112,7 +112,7 @@ print("ARE WE EVEN PERTURBING: ", not np.allclose(X_use, X_perturbed, atol=1e-5)
 print("ARE RANDOM AND DFT ATTACK PERTS SAME: ", not np.allclose(X_perturbed_rand, X_perturbed, atol=1e-5))
 
 ##### PERTURBATION RATIO
-perturbation = X_perturbed - X_use
+perturbation = X_perturbed_rand - X_use
 perturbation_norms = np.linalg.norm(perturbation, axis=1)
 original_norms = np.linalg.norm(X_use, axis=1)
 safe_original_norms = np.where(original_norms == 0, 1e-10, original_norms)
