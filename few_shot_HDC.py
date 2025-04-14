@@ -201,7 +201,7 @@ output_tensor = False
 in_features = 2049
 DIMENSIONS = 10000
 seed = 86
-perturbation_type = 'dft_attack'
+perturbation_type = 'random'
 
 print('Loading DroneRF Dataset')
 highlow = 'L'
