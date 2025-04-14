@@ -216,10 +216,14 @@ X_perturbed, Y_perturbed = get_arrays_efficient(perturbed_dataset, batch_size=64
 print("SHAPES ", X.shape, Y.shape, X_perturbed.shape, Y_perturbed.shape)
 print("ARE WE EVEN PERTURBING: ", not np.allclose(X, X_perturbed, atol=1e-5))
 
-## RAND X_PERT ##
-# max_value = np.max(X)
-# X_perturbed = np.random.uniform(0, max_value, size=X.shape)
-# Y_perturbed = copy.deepcopy(Y)
+
+##### RANDOM PERTURBATION GENERATION
+original_norms = torch.norm(X, dim=1)
+average_norm = original_norms.mean()          # scalar
+perturbation = torch.randn(X.shape[1])  # shape (2049,)
+perturbation = perturbation / torch.norm(perturbation)  # unit norm
+perturbation = perturbation * (0.4 * average_norm)      # scale to 40%
+X_perturbed_rand = X + perturbation  # broadcasting works here
 # ################# DUMMY DATA
 # def generate_dummy_data(num_samples=10, num_features=2049):
 #     """
@@ -304,7 +308,7 @@ for bw in bws:
 
             # Create DataLoader for training and testing
             train_dataset = torch.utils.data.TensorDataset(X_train, Y_train)
-            test_dataset = torch.utils.data.TensorDataset(X_perturbed[test_idx], Y_perturbed[test_idx])
+            test_dataset = torch.utils.data.TensorDataset(X_perturbed_rand[test_idx], Y_perturbed[test_idx])
 
             train_ld = torch.utils.data.DataLoader(train_dataset, batch_size=1, shuffle=True)
             test_ld = torch.utils.data.DataLoader(test_dataset, batch_size=1, shuffle=False)

@@ -99,6 +99,14 @@ X_use, y_use = get_arrays_efficient(dataset, batch_size=64)
 X_perturbed, y_perturbed = get_arrays_efficient(perturbed_dataset, batch_size=64)
 X_perturbed_rand, y_perturbed_rand = get_arrays_efficient(perturbed_dataset_random, batch_size=64)
 
+##### RANDOM PERTURBATION GENERATION
+original_norms = torch.norm(X_use, dim=1)
+average_norm = original_norms.mean()          # scalar
+perturbation = torch.randn(X_use.shape[1])  # shape (2049,)
+perturbation = perturbation / torch.norm(perturbation)  # unit norm
+perturbation = perturbation * (0.4 * average_norm)      # scale to 40%
+X_perturbed_rand = X_use + perturbation  # broadcasting works here
+
 print("ARE WE EVEN PERTURBING: ", not np.allclose(X_use, X_perturbed, atol=1e-5))
 
 print("ARE RANDOM AND DFT ATTACK PERTS SAME: ", not np.allclose(X_perturbed_rand, X_perturbed, atol=1e-5))
@@ -111,10 +119,6 @@ safe_original_norms = np.where(original_norms == 0, 1e-10, original_norms)
 ratios = perturbation_norms / safe_original_norms
 average_ratio = np.mean(ratios)
 print("Average perturbation ratio:", average_ratio)
-## RAND X_PERT ##
-# max_value = np.max(X_use)
-# X_perturbed = np.random.uniform(0, max_value, size=X_use.shape)
-# y_perturbed = y_use
 
 # X_tmp, y_tmp = dataset.get_arrays()
 
@@ -184,7 +188,7 @@ for fold, (train_idx, test_idx) in enumerate(skf.split(X_use, y_use)):
 
 
     svc.fit(X_train, Y_train)
-    Y_pred = svc.predict(X_perturbed[test_idx])
+    Y_pred = svc.predict(X_perturbed_rand[test_idx])
     accuracy = accuracy_score(Y_pred, y_perturbed[test_idx])
     print(f"Fold {fold + 1} Accuracy: {accuracy:.4f}")
     fold_accuracies.append(accuracy)
