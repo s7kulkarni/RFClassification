@@ -74,11 +74,11 @@ t_seg = 250 #ms
 n_per_seg = 4096
 interferences = ['WIFI', 'BLUE', 'BOTH', 'CLEAN']
 output_name = 'drones'
-norm_ratio = '04' # 0.xxx mapped to xxx
+norm_ratio = '4' # 0.xxx mapped to xxx
 feat_format = 'ARR'
 which_dataset = 'dronerf'
 output_tensor = False
-perturbation_type = 'dsads'
+perturbation_type = 'dft_attack'
 
 if which_dataset == 'dronerf':
     print('Loading DroneRF Dataset')
