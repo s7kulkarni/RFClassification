@@ -295,6 +295,7 @@ optimal_params = {'accuracy':0,
 for bw in bws:
     for seed in seeds:
         for fold, (train_idx, test_idx) in enumerate(skf.split(X_tensor, Y_tensor)):
+            set_seed(seed)
             print(f"Fold {fold + 1}/{k_folds}")
 
             # Split data into train and test sets for this fold
@@ -318,8 +319,6 @@ for bw in bws:
 
             train_ld = torch.utils.data.DataLoader(train_dataset, batch_size=1, shuffle=True)
             test_ld = torch.utils.data.DataLoader(test_dataset, batch_size=1, shuffle=False)
-
-            set_seed(seed)
 
 
             encode = RandomProjectionEncoder(DIMENSIONS, in_features).to(device)
