@@ -74,7 +74,7 @@ t_seg = 250 #ms
 n_per_seg = 4096
 interferences = ['WIFI', 'BLUE', 'BOTH', 'CLEAN']
 output_name = 'drones'
-norm_ratio = '45' # 0.xxx mapped to xxx
+norm_ratio = '50' # 0.xxx mapped to xxx
 feat_format = 'ARR'
 which_dataset = 'dronerf'
 output_tensor = False
@@ -109,7 +109,7 @@ X_perturbed_rand = X_use + perturbation[np.newaxis, :]
 
 print("ARE WE EVEN PERTURBING: ", not np.allclose(X_use, X_perturbed, atol=1e-5))
 
-print("ARE RANDOM AND DFT ATTACK PERTS SAME: ", not np.allclose(X_perturbed_rand, X_perturbed, atol=1e-5))
+print("ARE RANDOM AND DFT ATTACK PERTS Diff: ", not np.allclose(X_perturbed_rand, X_perturbed, atol=1e-5))
 
 ##### PERTURBATION RATIO
 perturbation = X_perturbed - X_use
