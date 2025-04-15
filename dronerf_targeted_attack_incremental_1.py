@@ -210,7 +210,7 @@ def process_and_save_incrementally(avg_dft_dict, checkpoint_dir='/home/zebra/shr
         
         print("rf_data_h, rf_data_l shapes ", rf_data_h.shape, rf_data_l.shape)
         # Stack high and low frequency data
-        rf_sig = np.vstack((rf_data_h, rf_data_l_adv))
+        rf_sig = np.vstack((rf_data_h, rf_data_l_rand))
         print("rf_sig shape ", rf_sig.shape)
 
         # Segment the data
