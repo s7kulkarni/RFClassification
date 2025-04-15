@@ -112,7 +112,7 @@ print("ARE WE EVEN PERTURBING: ", not np.allclose(X_use, X_perturbed, atol=1e-5)
 print("ARE RANDOM AND DFT ATTACK PERTS SAME: ", not np.allclose(X_perturbed_rand, X_perturbed, atol=1e-5))
 
 ##### PERTURBATION RATIO
-perturbation = X_perturbed[0] - X_use[0]
+perturbation = X_perturbed[5] - X_use[5]
 perturbation_norm = np.linalg.norm(perturbation)
 original_norm = np.linalg.norm(X_use, axis=1).mean()
 average_ratio = perturbation_norm / original_norm
@@ -146,7 +146,6 @@ accs, f1s, runts = model.run_cv_perturbed(X_use, y_use, X_perturbed, y_perturbed
 for icv in range(5):
     print(model.cv_models[icv].support_vectors_.shape)
 
-np.mean([12345,12395,12450,12469,12383])
 
 # search through parameters
 Cs=list(map(lambda x:pow(2,x),range(-3,10,2)))
