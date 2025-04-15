@@ -108,8 +108,9 @@ def compute_dft_average_streaming(main_folder, t_seg, chunk_size=1000,
 
 def process_and_save_incrementally(avg_dft_dict, checkpoint_dir='/home/zebra/shriniwas/checkpoints_attack'):
     """
-    Processes drone RF data incrementally, calculates PSD, and saves results incrementally.
+    Processes drone RF data with optimized perturbation strategy.
     """
+    # Checkpoint setup (unchanged)
     if not os.path.exists(checkpoint_dir):
         os.makedirs(checkpoint_dir)
 
@@ -124,9 +125,23 @@ def process_and_save_incrementally(avg_dft_dict, checkpoint_dir='/home/zebra/shr
         last_processed_file = ""
         start_idx = 0
 
-    if avg_dft_dict is None:
-        raise ValueError("avg_dft_dict must be provided")
-    print("Avg values obtained, on to processing")
+    # Class representative cache (NEW)
+    class_representatives = {}  # {label: (filepath, signal)}
+
+    def get_representative_signal(target_label):
+        """Get or load a representative signal for the target class"""
+        if target_label not in class_representatives:
+            # Find first file with this label
+            for lf in low_freq_files:
+                if int(lf[0][:3]) == target_label:
+                    try:
+                        signal = pd.read_csv(lf[1], header=None).values.flatten()
+                        class_representatives[target_label] = (lf[1], signal)
+                        break
+                    except Exception as e:
+                        print(f"Error loading representative for {target_label}: {e}")
+                        continue
+        return class_representatives.get(target_label, (None, None))[1]
 
     # File collection (unchanged)
     high_freq_files = []
@@ -141,9 +156,7 @@ def process_and_save_incrementally(avg_dft_dict, checkpoint_dir='/home/zebra/shr
     high_freq_files.sort()
     low_freq_files.sort()
 
-    print("TOTAL HIGH/LOW FREQ FILES", len(high_freq_files))
-
-    # Process files incrementally
+    # Main processing loop
     for i in range(start_idx, len(high_freq_files)):
         print(i, 'of', len(high_freq_files))
         high_freq_file = high_freq_files[i]
@@ -159,7 +172,7 @@ def process_and_save_incrementally(avg_dft_dict, checkpoint_dir='/home/zebra/shr
             print(f"No matching low-frequency file for {high_freq_file[0]}")
             continue
 
-        # Load high-frequency data
+        # Load data (unchanged)
         try:
             rf_data_h = pd.read_csv(high_freq_file[1], header=None).values.flatten()
         except Exception as e:
@@ -177,34 +190,40 @@ def process_and_save_incrementally(avg_dft_dict, checkpoint_dir='/home/zebra/shr
             print(f"Length mismatch: {high_freq_file[0]} and {low_freq_file[0]}")
             continue
 
-        # ===== PERTURBATION GENERATION (MODIFIED CORE LOGIC) =====
-        current_label = int(low_freq_file[0][:3])  # Using 4-class label
+        # ===== IMPROVED PERTURBATION LOGIC =====
+        current_label = int(low_freq_file[0][:3])
         false_labels = [l for l in avg_dft_dict.keys() if l != current_label]
+
         print("KEYS", avg_dft_dict.keys())
-        print("FALSE LABELS", false_labels)
-        target_label = np.random.choice(false_labels)
-        print("CURRENT N TARGET LABELS ", current_label, target_label)
-        # 1. Get current signal's DFT
+        
+        if 1:
+            # Adversarial: Choose the farthest class representative
+            target_label = max(false_labels, 
+                             key=lambda x: np.linalg.norm(avg_dft_dict[x] - avg_dft_dict[current_label]))
+        else:
+            # Random selection
+            target_label = np.random.choice(false_labels)
+        
+        # Get representative signal
+        target_signal = get_representative_signal(target_label)
+        if target_signal is None:
+            print(f"No representative found for {target_label}")
+            continue
+
+        # Compute perturbation
         current_dft = np.fft.fft(rf_data_l)
+        target_dft = np.fft.fft(target_signal[:len(rf_data_l)])  # Truncate if needed
+        perturbation = np.real(np.fft.ifft(target_dft - current_dft))
         
-        # 2. Compute perturbation in frequency domain
-        delta_fft = avg_dft_dict[target_label] - current_dft
-        
-        # 3. Convert to time domain and scale
-        perturbation = np.real(np.fft.ifft(delta_fft))
-        ratio = 0.5
+        # Scale perturbation
+        ratio = 0.45
         perturbation *= ratio / (np.linalg.norm(perturbation)/np.linalg.norm(rf_data_l))
         print('PEERTURBATION NORM', np.linalg.norm(perturbation))
-        
-        # 4. Generate random perturbation with same power
-        random_pert = np.random.randn(len(perturbation))
-        random_pert *= np.linalg.norm(perturbation)/np.linalg.norm(random_pert)
+        print('PEERTURBATION NORM RATIO', np.linalg.norm(perturbation)/np.linalg.norm(rf_data_l))
         
         # Apply perturbations
         rf_data_l_adv = rf_data_l + perturbation
-        rf_data_l_rand = rf_data_l + random_pert
-        print('isPerturbed : ', not np.allclose(rf_data_l, rf_data_l_adv, atol=1e-5))
-        # ===== END MODIFIED SECTION =====
+        # ===== END PERTURBATION LOGIC =====
 
         print("rf_data_h, rf_data_l shapes ", rf_data_h.shape, rf_data_l.shape)
         # Stack high and low frequency data
