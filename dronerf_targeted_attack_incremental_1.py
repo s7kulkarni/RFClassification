@@ -260,6 +260,7 @@ def process_and_save_incrementally(avg_dft_dict, checkpoint_dir='/home/zebra/shr
             average_ratio = perturbation_norm / original_norm
             print("Perturbation Magnitude Ratio :", average_ratio)
             print("Perturbation Magnitude :", perturbation_norm)
+            print("PSD Magnitude :", original_norm)
 
             # Labels
             BILABEL.append(int(low_freq_file[0][0]))  # 2-class label
