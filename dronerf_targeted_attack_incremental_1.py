@@ -192,7 +192,7 @@ def process_and_save_incrementally(avg_dft_dict, checkpoint_dir='/home/zebra/shr
         
         # 3. Convert to time domain and scale
         perturbation = np.real(np.fft.ifft(delta_fft))
-        ratio = 0.5
+        ratio = 0.49
         perturbation *= ratio / (np.linalg.norm(perturbation)/np.linalg.norm(rf_data_l))
         print('PEERTURBATION NORM', np.linalg.norm(perturbation))
         
@@ -233,11 +233,33 @@ def process_and_save_incrementally(avg_dft_dict, checkpoint_dir='/home/zebra/shr
         DRONELABEL = []
         MODELALBEL = []
 
+        ## AS IT IS TESTING PSD DIFFERENCE
+        # Stack high and low frequency data
+        rf_sig_orig = np.vstack((rf_data_h, rf_data_l))
+        print("rf_sig_orig shape ", rf_sig_orig.shape)
+
+        try:
+            rf_sig_segments_orig = np.split(rf_sig_orig[:, :n_keep], n_segs, axis=1)
+        except Exception as e:
+            print(f"Error splitting {high_freq_file[0]}: {e}")
+            continue
+        i=0
+
         for seg in rf_sig_segments:
             # Calculate PSD for high-frequency data (assuming index 0)
             h_l = 0 if high_low == 'H' else 1
             fpsd, Pxx_den = signal.welch(seg[h_l], fs, window=win_type, nperseg=n_per_seg)
             F_PSD.append(Pxx_den)
+            ## ORIG PSD
+            seg_orig = rf_sig_segments_orig[i]
+            fpsd, Pxx_den_orig = signal.welch(seg_orig[h_l], fs, window=win_type, nperseg=n_per_seg)
+
+            perturbation = Pxx_den_orig - Pxx_den
+            perturbation_norm = np.linalg.norm(perturbation)
+            original_norm = np.linalg.norm(Pxx_den)
+            average_ratio = perturbation_norm / original_norm
+            print("Perturbation Magnitude Ratio :", average_ratio)
+            print("Perturbation Magnitude :", perturbation_norm)
 
             # Labels
             BILABEL.append(int(low_freq_file[0][0]))  # 2-class label
