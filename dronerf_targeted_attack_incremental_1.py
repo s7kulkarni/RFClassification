@@ -106,6 +106,39 @@ def compute_dft_average_streaming(main_folder, t_seg, chunk_size=1000,
     return binary_avg, fourclass_avg, tenclass_avg
 
 
+def create_spectrally_matched_perturbation(signal, ratio=0.5, nperseg=None):
+    """Create perturbation that preserves PSD visibility"""
+    if nperseg is None:
+        nperseg = len(signal) // 8  # Default overlap ratio for Welch
+    
+    # Get signal's PSD
+    freqs, psd = signal.welch(signal, fs, nperseg=nperseg)
+    
+    # Create random noise with matching length
+    noise = np.random.randn(len(signal))
+    
+    # Fourier transform with proper padding
+    noise_f = np.fft.fft(noise)
+    
+    # Create interpolation of PSD to match FFT bins
+    psd_interp = np.interp(
+        np.linspace(0, len(psd)-1, len(noise_f)//2 + 1),
+        np.arange(len(psd)),
+        psd
+    )
+    
+    # Apply shaped spectrum (only to positive frequencies)
+    noise_f[:len(noise_f)//2 + 1] *= np.sqrt(psd_interp)
+    noise_f[len(noise_f)//2 + 1:] = np.conj(noise_f[1:len(noise_f)//2][::-1])
+    
+    # Convert back to time domain
+    colored_noise = np.real(np.fft.ifft(noise_f))
+    
+    # Scale to desired ratio
+    colored_noise *= ratio / (np.linalg.norm(colored_noise)/np.linalg.norm(signal))
+    return colored_noise
+
+
 def process_and_save_incrementally(avg_dft_dict, checkpoint_dir='/home/zebra/shriniwas/checkpoints_attack_1'):
     """
     Processes drone RF data incrementally, calculates PSD, and saves results incrementally.
@@ -192,13 +225,14 @@ def process_and_save_incrementally(avg_dft_dict, checkpoint_dir='/home/zebra/shr
         
         # 3. Convert to time domain and scale
         perturbation = np.real(np.fft.ifft(delta_fft))
-        ratio = 0.49
+        ratio = 0.5
         perturbation *= ratio / (np.linalg.norm(perturbation)/np.linalg.norm(rf_data_l))
         print('PEERTURBATION NORM', np.linalg.norm(perturbation))
         
         # 4. Generate random perturbation with same power
-        random_pert = np.random.randn(len(perturbation))
-        random_pert *= np.linalg.norm(perturbation)/np.linalg.norm(random_pert)
+        # random_pert = np.random.randn(len(perturbation))
+        # random_pert *= np.linalg.norm(perturbation)/np.linalg.norm(random_pert)
+        random_pert = create_spectrally_matched_perturbation(rf_data_l, ratio=ratio)
         
         # Apply perturbations
         rf_data_l_adv = rf_data_l + perturbation
