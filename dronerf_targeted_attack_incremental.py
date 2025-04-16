@@ -216,7 +216,7 @@ def process_and_save_incrementally(avg_dft_dict, checkpoint_dir='/home/zebra/shr
         perturbation = np.real(np.fft.ifft(target_dft - current_dft))
         
         # Scale perturbation
-        ratio = 0.5
+        ratio = 0.4
         perturbation *= ratio / (np.linalg.norm(perturbation)/np.linalg.norm(rf_data_l))
         print('PEERTURBATION NORM', np.linalg.norm(perturbation))
         print('PEERTURBATION NORM RATIO', np.linalg.norm(perturbation)/np.linalg.norm(rf_data_l))
