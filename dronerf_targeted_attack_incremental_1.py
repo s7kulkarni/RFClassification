@@ -106,16 +106,16 @@ def compute_dft_average_streaming(main_folder, t_seg, chunk_size=1000,
     return binary_avg, fourclass_avg, tenclass_avg
 
 
-def create_spectrally_matched_perturbation(signal, ratio=0.5, nperseg=None):
+def create_spectrally_matched_perturbation(sig, ratio=0.5, nperseg=None):
     """Create perturbation that preserves PSD visibility"""
     if nperseg is None:
-        nperseg = len(signal) // 8  # Default overlap ratio for Welch
+        nperseg = len(sig) // 8  # Default overlap ratio for Welch
     
     # Get signal's PSD
-    freqs, psd = signal.welch(signal, fs, nperseg=nperseg)
+    freqs, psd = signal.welch(sig, fs, nperseg=nperseg)
     
     # Create random noise with matching length
-    noise = np.random.randn(len(signal))
+    noise = np.random.randn(len(sig))
     
     # Fourier transform with proper padding
     noise_f = np.fft.fft(noise)
@@ -135,7 +135,7 @@ def create_spectrally_matched_perturbation(signal, ratio=0.5, nperseg=None):
     colored_noise = np.real(np.fft.ifft(noise_f))
     
     # Scale to desired ratio
-    colored_noise *= ratio / (np.linalg.norm(colored_noise)/np.linalg.norm(signal))
+    colored_noise *= ratio / (np.linalg.norm(colored_noise)/np.linalg.norm(sig))
     return colored_noise
 
 
