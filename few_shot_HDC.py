@@ -147,7 +147,7 @@ class RandomProjectionEncoder(nn.Module):
         mu = sample_hv.mean()
         sigma = sample_hv.std(unbiased=False)  # use unbiased=False for population std
         threshold = mu + k * sigma
-        sample_hv = torch.sign(sample_hv - threshold)
+        sample_hv = torch.sign(sample_hv - 0*threshold)
         ## NEW DYNAMIC THRESHOLDING END
 
         # sample_hv = torch.sign(sample_hv)
