@@ -20,7 +20,7 @@ import matplotlib.pyplot as plt
 #             print(f'Reset trainable parameters of layer = {layer}')
 #             layer.reset_parameters()
 
-def runkfoldcv(model, dataset, device, k_folds=5, batch_size=128, num_epochs=5):
+def runkfoldcv(model, dataset, device, k_folds, batch_size, learning_rate, num_epochs, momentum, l2reg):
     kfold = KFold(n_splits=k_folds, shuffle=True)
     results = []
     
@@ -31,13 +31,13 @@ def runkfoldcv(model, dataset, device, k_folds=5, batch_size=128, num_epochs=5):
         train_subsampler = torch.utils.data.SubsetRandomSampler(train_ids)
         test_subsampler = torch.utils.data.SubsetRandomSampler(test_ids)
         
-        train_loader = DataLoader(dataset, batch_size=batch_size, sampler=train_subsampler)
-        test_loader = DataLoader(dataset, batch_size=batch_size, sampler=test_subsampler)
+        train_loader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, sampler=train_subsampler)
+        test_loader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, sampler=test_subsampler)
         
         # ===== CHANGED: TRAINING CONFIG MATCHES MATLAB =====
         optimizer = torch.optim.SGD(
             model.parameters(),
-            lr=0.001,          # MATLAB: 0.001 (paper says 0.01 but MATLAB uses 0.001)
+            lr=learning_rate,          # MATLAB: 0.001 (paper says 0.01 but MATLAB uses 0.001)
             momentum=0.95,     # MATLAB: 0.95
             weight_decay=1e-4, # MATLAB: L2Regularization 1e-4
             nesterov=True      # Closer to MATLAB's sgdm
