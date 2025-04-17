@@ -20,7 +20,66 @@ import matplotlib.pyplot as plt
 #             print(f'Reset trainable parameters of layer = {layer}')
 #             layer.reset_parameters()
 
-def runkfoldcv(model, dataset, device, k_folds, batch_size, learning_rate, num_epochs, momentum, l2reg):
+def runkfoldcv(model, dataset, device, k_folds, batch_size, num_epochs, momentum, l2reg):
+    # ===== CHANGED: OPTIMIZER CONFIG TO MATCH PAPER =====
+    optimizer = torch.optim.SGD(
+        model.parameters(),
+        lr=0.01,          # Paper: initial LR 0.01
+        momentum=0.95,     # Paper: momentum 0.95
+        weight_decay=1e-4  # Paper: L2 regularization
+    )
+    # ===== CHANGED: ADDED LR SCHEDULER =====
+    scheduler = torch.optim.lr_scheduler.StepLR(
+        optimizer, 
+        step_size=45,      # Paper: LR drops after 45 epochs
+        gamma=0.1          # Paper: new LR = 0.001
+    )
+    criterion = nn.CrossEntropyLoss()
+
+    # ===== REST REMAINS UNCHANGED (YOUR ORIGINAL K-FOLD LOGIC) =====
+    kfold = KFold(n_splits=k_folds, shuffle=True)
+    results = {}
+    
+    for fold, (train_ids, test_ids) in enumerate(kfold.split(dataset)):
+        train_subsampler = torch.utils.data.SubsetRandomSampler(train_ids)
+        test_subsampler = torch.utils.data.SubsetRandomSampler(test_ids)
+        
+        trainloader = torch.utils.data.DataLoader(
+            dataset, batch_size=batch_size, sampler=train_subsampler)
+        testloader = torch.utils.data.DataLoader(
+            dataset, batch_size=batch_size, sampler=test_subsampler)
+
+        # Training loop
+        for epoch in range(num_epochs):
+            model.train()
+            for inputs, targets in trainloader:
+                inputs, targets = inputs.to(device), targets.to(device)
+                
+                optimizer.zero_grad()
+                outputs = model(inputs)
+                loss = criterion(outputs, targets)
+                loss.backward()
+                optimizer.step()
+            
+            # ===== CHANGED: UPDATE LR AT EPOCH END =====
+            scheduler.step()  
+
+        # Your original evaluation logic (unchanged)
+        correct, total = 0, 0
+        model.eval()
+        with torch.no_grad():
+            for inputs, targets in testloader:
+                inputs, targets = inputs.to(device), targets.to(device)
+                outputs = model(inputs)
+                _, preds = torch.max(outputs, 1)
+                total += targets.size(0)
+                correct += (preds == targets).sum().item()
+        
+        results[fold] = 100.0 * (correct / total)
+    
+    return results
+
+def runkfoldcv_old(model, dataset, device, k_folds, batch_size, learning_rate, num_epochs, momentum, l2reg):
     num_classes = model.num_classes
     if num_classes == 2:
         f1type = 'binary'
