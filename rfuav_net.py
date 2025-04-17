@@ -364,12 +364,9 @@ class RFUAVNet(nn.Module):
         n_groups = 8       # 8 groups for grouped convolutions
         n_filters = 64     # 64 total filters
         
-        # Input transformation layer
-        self.input_transform = nn.Linear(2, 2)  # Maintains original dimensions
-        
         # r-unit (first conv block)
         self.conv1 = nn.Conv1d(
-            in_channels=2,  # Now correct for [batch, 2, 10000] input
+            in_channels=2,  # Takes [batch, 2, 10000] after permute
             out_channels=n_filters,
             kernel_size=5,
             stride=5,
@@ -397,10 +394,8 @@ class RFUAVNet(nn.Module):
     
     def forward(self, x):
         # Input x shape: [batch, 10000, 2]
-        
-        # Step 1: Transform input to [batch, 2, 10000]
-        x = self.input_transform(x)  # [batch, 10000, 2]
-        x = x.permute(0, 2, 1)      # [batch, 2, 10000]
+        # Simply permute dimensions to [batch, 2, 10000]
+        x = x.permute(0, 2, 1)
         
         # r-unit
         x1 = self.conv1(x)          # [batch, 64, 2000]
@@ -445,6 +440,7 @@ class RFUAVNet(nn.Module):
         # Output
         out = self.fc(f_final)
         return self.softmax(out)
+
 
 
 
