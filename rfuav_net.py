@@ -360,13 +360,16 @@ class RFUAVNet(nn.Module):
     def __init__(self, num_classes):
         super(RFUAVNet, self).__init__()
         
-        # ===== FINAL CORRECTED ARCHITECTURE =====
-        n_groups = 8      # Paper: 8 groups
-        n_filters = 64    # Paper: 64 total filters (8 groups × 8 filters)
+        # Architecture parameters (matches paper)
+        n_groups = 8       # 8 groups for grouped convolutions
+        n_filters = 64     # 64 total filters
+        
+        # Input transformation layer
+        self.input_transform = nn.Linear(2, 2)  # Maintains original dimensions
         
         # r-unit (first conv block)
         self.conv1 = nn.Conv1d(
-            in_channels=2,  # Takes [batch, 2, 10000] after permute
+            in_channels=2,  # Now correct for [batch, 2, 10000] input
             out_channels=n_filters,
             kernel_size=5,
             stride=5,
@@ -389,15 +392,18 @@ class RFUAVNet(nn.Module):
         ])
         
         # Final layers
-        self.fc = nn.Linear(320, num_classes)  # 256 (multi-gap) + 64 (last gap)
+        self.fc = nn.Linear(320, num_classes)
         self.softmax = nn.Softmax(dim=1)
     
     def forward(self, x):
         # Input x shape: [batch, 10000, 2]
-        x = x.permute(0, 2, 1)  # -> [batch, 2, 10000]
+        
+        # Step 1: Transform input to [batch, 2, 10000]
+        x = self.input_transform(x)  # [batch, 10000, 2]
+        x = x.permute(0, 2, 1)      # [batch, 2, 10000]
         
         # r-unit
-        x1 = self.conv1(x)  # [batch, 64, 2000]
+        x1 = self.conv1(x)          # [batch, 64, 2000]
         x1 = self.norm1(x1)
         x1 = self.elu1(x1)
         
@@ -439,6 +445,7 @@ class RFUAVNet(nn.Module):
         # Output
         out = self.fc(f_final)
         return self.softmax(out)
+
 
 
     # Helper functions (unchanged)
