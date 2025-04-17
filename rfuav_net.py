@@ -360,13 +360,19 @@ class RFUAVNet(nn.Module):
     def __init__(self, num_classes):
         super(RFUAVNet, self).__init__()
         
-        # Architecture parameters (matches paper)
-        n_groups = 8       # 8 groups for grouped convolutions
-        n_filters = 64     # 64 total filters
+        # Architecture parameters
+        n_groups = 8
+        n_filters = 64
+        
+        # Input layer to transform [10000, 2] -> [2, 10000]
+        self.input_layer = nn.Sequential(
+            nn.Linear(2, 2),  # Maintains feature dimension
+            nn.ReLU()
+        )
         
         # r-unit (first conv block)
         self.conv1 = nn.Conv1d(
-            in_channels=2,  # Takes [batch, 2, 10000] after permute
+            in_channels=2,  # Now correct after transform
             out_channels=n_filters,
             kernel_size=5,
             stride=5,
@@ -375,7 +381,7 @@ class RFUAVNet(nn.Module):
         self.norm1 = nn.BatchNorm1d(n_filters)
         self.elu1 = nn.ELU(alpha=1.0)
         
-        # g-units (grouped convolutions)
+        # Rest of the network remains the same...
         self.group_convs = nn.ModuleList([
             nn.Conv1d(n_filters, n_filters, kernel_size=3,
                      stride=2, groups=n_groups, padding=1)
@@ -394,10 +400,14 @@ class RFUAVNet(nn.Module):
     
     def forward(self, x):
         # Input x shape: [batch, 10000, 2]
-        # Simply permute dimensions to [batch, 2, 10000]
+        
+        # Step 1: Transform each [10000, 2] sequence
+        x = self.input_layer(x)  # [batch, 10000, 2]
+        
+        # Step 2: Permute to [batch, 2, 10000]
         x = x.permute(0, 2, 1)
         
-        # r-unit
+        # Continue with original forward pass
         x1 = self.conv1(x)          # [batch, 64, 2000]
         x1 = self.norm1(x1)
         x1 = self.elu1(x1)
