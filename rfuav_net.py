@@ -360,31 +360,30 @@ class RFUAVNet(nn.Module):
     def __init__(self, num_classes):
         super(RFUAVNet, self).__init__()
         
-        # ===== FINAL ARCHITECTURE PARAMS (MATCHES PAPER/MATLAB) =====
-        n_groups = 8       # Paper: 8 groups
-        n_filters = 64     # Paper: 64 total filters (8 groups × 8 filters)
+        # ===== FINAL CORRECTED ARCHITECTURE =====
+        n_groups = 8      # Paper: 8 groups
+        n_filters = 64    # Paper: 64 total filters (8 groups × 8 filters)
         
         # r-unit (first conv block)
         self.conv1 = nn.Conv1d(
-            in_channels=10000,  # Takes [batch, 10000, 2] -> permuted to [batch, 2, 10000]
+            in_channels=2,  # Takes [batch, 2, 10000] after permute
             out_channels=n_filters,
             kernel_size=5,
             stride=5,
-            padding=2,
-            groups=10000  # Depthwise convolution
+            padding=2
         )
-        self.norm1 = nn.BatchNorm1d(n_filters)  # MATLAB: only in r-unit
+        self.norm1 = nn.BatchNorm1d(n_filters)
         self.elu1 = nn.ELU(alpha=1.0)
         
         # g-units (grouped convolutions)
         self.group_convs = nn.ModuleList([
-            nn.Conv1d(n_filters, n_filters, kernel_size=3, 
+            nn.Conv1d(n_filters, n_filters, kernel_size=3,
                      stride=2, groups=n_groups, padding=1)
-            for _ in range(4)  # 4 g-units
+            for _ in range(4)
         ])
         self.elu2 = nn.ModuleList([nn.ELU(alpha=1.0) for _ in range(4)])
         
-        # Multi-GAP layers (paper: Section III-C)
+        # Multi-GAP layers
         self.gap_layers = nn.ModuleList([
             nn.AdaptiveAvgPool1d(1) for _ in range(4)
         ])
@@ -395,19 +394,17 @@ class RFUAVNet(nn.Module):
     
     def forward(self, x):
         # Input x shape: [batch, 10000, 2]
-        x = x.permute(0, 2, 1)  # -> [batch, 2, 10000] for conv1
+        x = x.permute(0, 2, 1)  # -> [batch, 2, 10000]
         
         # r-unit
-        x1 = self.conv1(x)  # Special depthwise conv
-        x1 = x1.permute(0, 2, 1)  # -> [batch, 64, 2000] for norm1
+        x1 = self.conv1(x)  # [batch, 64, 2000]
         x1 = self.norm1(x1)
         x1 = self.elu1(x1)
-        x1 = x1.permute(0, 2, 1)  # -> [batch, 2000, 64] for next layers
         
         # g-unit 1
-        xg1 = self.group_convs[0](x1.permute(0, 2, 1))
+        xg1 = self.group_convs[0](x1)
         xg1 = self.elu2[0](xg1)
-        xp1 = F.max_pool1d(x1.permute(0, 2, 1), kernel_size=2, stride=2)
+        xp1 = F.max_pool1d(x1, kernel_size=2, stride=2)
         x2 = xg1 + xp1
         
         # g-unit 2
@@ -428,20 +425,21 @@ class RFUAVNet(nn.Module):
         xp4 = F.max_pool1d(x4, kernel_size=2, stride=2)
         x5 = xg4 + xp4
         
-        # Multi-GAP (paper: Eq. 9)
+        # Multi-GAP
         gaps = []
         for i, x in enumerate([xg1, xg2, xg3, xg4]):
             gaps.append(self.gap_layers[i](x))
-        f_multigap = torch.cat(gaps, dim=1)  # 256 channels
+        f_multigap = torch.cat(gaps, dim=1)  # [batch, 256, 1]
         
-        # Final GAP (paper: Eq. 10)
-        f_gap_add = self.gap_layers[0](x5)  # 64 channels
-        f_final = torch.cat([f_multigap, f_gap_add], dim=1)  # 320 channels
-        f_final = f_final.view(f_final.size(0), -1)
+        # Final GAP
+        f_gap_add = self.gap_layers[0](x5)  # [batch, 64, 1]
+        f_final = torch.cat([f_multigap, f_gap_add], dim=1)  # [batch, 320, 1]
+        f_final = f_final.view(f_final.size(0), -1)  # [batch, 320]
         
         # Output
         out = self.fc(f_final)
         return self.softmax(out)
+
 
     # Helper functions (unchanged)
     def runit(self, x):
