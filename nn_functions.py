@@ -20,7 +20,7 @@ import matplotlib.pyplot as plt
 #             print(f'Reset trainable parameters of layer = {layer}')
 #             layer.reset_parameters()
 
-def run_kfold_cv(model, dataset, device, k_folds=5, batch_size=128, num_epochs=5):
+def runkfoldcv(model, dataset, device, k_folds=5, batch_size=128, num_epochs=5):
     kfold = KFold(n_splits=k_folds, shuffle=True)
     results = []
     
