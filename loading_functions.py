@@ -805,30 +805,8 @@ class RFRawTorch(Dataset):
         
 ## Create a dataset class
 ## Creating a custom dataset
-class DroneData(Dataset):
-    def __init__(self, Xarr, yarr):
-        # Normalize input to [0,1] per channel (paper Sec III-B)
-        self.Xarr = (Xarr - Xarr.min(axis=(0,1), keepdims=True)) / \
-                   (Xarr.max(axis=(0,1), keepdims=True) - Xarr.min(axis=(0,1), keepdims=True) + 1e-8)
-        
-        # Handle labels (support both string and integer labels)
-        if isinstance(yarr[0], str):
-            self.le = preprocessing.LabelEncoder()
-            self.yarr = self.le.fit_transform(yarr.flatten())
-        else:
-            self.yarr = yarr.flatten().astype(np.int64)
-    
-    def __len__(self):
-        return len(self.yarr)
-    
-    def __getitem__(self, index):
-        X = torch.tensor(self.Xarr[index], dtype=torch.float32)
-        X = X.permute(1, 0)  # Ensure shape [2, 10000] for model
-        y = torch.tensor(self.yarr[index], dtype=torch.long)
-        return X, y
 
-
-class DroneDataOld(Dataset): ## NUMBERICAL DATA
+class DroneData(Dataset): ## NUMERICAL DATA
     def __init__(self, Xarr, yarr):
         self.Xarr = Xarr
         self.le = preprocessing.LabelEncoder()

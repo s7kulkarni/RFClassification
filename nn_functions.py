@@ -34,13 +34,13 @@ def runkfoldcv(model, dataset, device, k_folds, batch_size, learning_rate, num_e
         train_loader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, sampler=train_subsampler)
         test_loader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, sampler=test_subsampler)
         
-        # ===== CHANGED: TRAINING CONFIG MATCHES MATLAB =====
+        # ===== FINAL TRAINING CONFIG (MATCHES MATLAB) =====
         optimizer = torch.optim.SGD(
             model.parameters(),
-            lr=learning_rate,          # MATLAB: 0.001 (paper says 0.01 but MATLAB uses 0.001)
+            lr=0.001,          # MATLAB: 0.001
             momentum=0.95,     # MATLAB: 0.95
             weight_decay=1e-4, # MATLAB: L2Regularization 1e-4
-            nesterov=True      # Closer to MATLAB's sgdm
+            nesterov=True
         )
         scheduler = torch.optim.lr_scheduler.StepLR(
             optimizer, 
@@ -81,7 +81,6 @@ def runkfoldcv(model, dataset, device, k_folds, batch_size, learning_rate, num_e
     
     print(f'\nMean Accuracy: {np.mean(results):.2f}% ± {np.std(results):.2f}')
     return results
-    # ===== END CHANGED TRAINING =====
 
 
 def runkfoldcv_old(model, dataset, device, k_folds, batch_size, learning_rate, num_epochs, momentum, l2reg):

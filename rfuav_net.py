@@ -34,6 +34,7 @@ import torch.nn.functional as F
 from torch.utils.data import Dataset
 import torch
 import torchvision.models as models
+import random
 # from torchmetrics import F1Score
 
 # reload functions & modules
@@ -350,21 +351,32 @@ print("Drones labels", y4s_arr[:10], "zeros? x,2,4,10 ", np.all(Xs_norm == 0), n
 #                 print(f'Reset trainable parameters of layer = {layer}')
 #                 layer.reset_parameters()
 
+# Set all random seeds for reproducibility
+torch.manual_seed(42)
+np.random.seed(42)
+random.seed(42)
+
 class RFUAVNet(nn.Module):
     def __init__(self, num_classes):
         super(RFUAVNet, self).__init__()
-        # ===== CHANGED: ARCHITECTURE PARAMS MATCH PAPER/MATLAB =====
-        self.num_classes = num_classes
-        n_groups = 8      # Paper: 8 groups
-        n_filters = 64    # Paper: 64 total filters (8 groups × 8 filters)
+        
+        # ===== FINAL ARCHITECTURE PARAMS (MATCHES PAPER/MATLAB) =====
+        n_groups = 8       # Paper: 8 groups
+        n_filters = 64     # Paper: 64 total filters (8 groups × 8 filters)
         
         # r-unit (first conv block)
-        self.conv1 = nn.Conv1d(in_channels=2, out_channels=n_filters, 
-                              kernel_size=5, stride=5, padding=2)
+        self.conv1 = nn.Conv1d(
+            in_channels=10000,  # Takes [batch, 10000, 2] -> permuted to [batch, 2, 10000]
+            out_channels=n_filters,
+            kernel_size=5,
+            stride=5,
+            padding=2,
+            groups=10000  # Depthwise convolution
+        )
         self.norm1 = nn.BatchNorm1d(n_filters)  # MATLAB: only in r-unit
         self.elu1 = nn.ELU(alpha=1.0)
         
-        # ===== CHANGED: GROUPED CONVS MATCH PAPER (8 GROUPS) =====
+        # g-units (grouped convolutions)
         self.group_convs = nn.ModuleList([
             nn.Conv1d(n_filters, n_filters, kernel_size=3, 
                      stride=2, groups=n_groups, padding=1)
@@ -382,17 +394,21 @@ class RFUAVNet(nn.Module):
         self.softmax = nn.Softmax(dim=1)
     
     def forward(self, x):
+        # Input x shape: [batch, 10000, 2]
+        x = x.permute(0, 2, 1)  # -> [batch, 2, 10000] for conv1
+        
         # r-unit
-        x1 = self.conv1(x)
+        x1 = self.conv1(x)  # Special depthwise conv
+        x1 = x1.permute(0, 2, 1)  # -> [batch, 64, 2000] for norm1
         x1 = self.norm1(x1)
         x1 = self.elu1(x1)
+        x1 = x1.permute(0, 2, 1)  # -> [batch, 2000, 64] for next layers
         
-        # ===== CHANGED: SKIP-CONNECTIONS MATCH MATLAB STRUCTURE =====
         # g-unit 1
-        xg1 = self.group_convs[0](x1)
+        xg1 = self.group_convs[0](x1.permute(0, 2, 1))
         xg1 = self.elu2[0](xg1)
-        xp1 = F.max_pool1d(x1, kernel_size=2, stride=2)  # MATLAB: maxpool_1
-        x2 = xg1 + xp1  # MATLAB: addition_1
+        xp1 = F.max_pool1d(x1.permute(0, 2, 1), kernel_size=2, stride=2)
+        x2 = xg1 + xp1
         
         # g-unit 2
         xg2 = self.group_convs[1](x2)
@@ -412,7 +428,7 @@ class RFUAVNet(nn.Module):
         xp4 = F.max_pool1d(x4, kernel_size=2, stride=2)
         x5 = xg4 + xp4
         
-        # ===== CHANGED: MULTI-GAP MATCHES PAPER EQUATION 9 =====
+        # Multi-GAP (paper: Eq. 9)
         gaps = []
         for i, x in enumerate([xg1, xg2, xg3, xg4]):
             gaps.append(self.gap_layers[i](x))
@@ -426,7 +442,6 @@ class RFUAVNet(nn.Module):
         # Output
         out = self.fc(f_final)
         return self.softmax(out)
-    # ===== END CHANGED ARCHITECTURE =====
 
     # Helper functions (unchanged)
     def runit(self, x):
@@ -470,6 +485,7 @@ avg_acc, mean_f1s, mean_f1s, mean_runtime = runkfoldcv(
 # Set up data and parameters
 batch_size = 128
 num_classes = len(set(y4s_arr))
+print("NUM_CLASSES - ", num_classes)
 learning_rate = 0.01
 num_epochs = 5 # 0
 momentum = 0.95
