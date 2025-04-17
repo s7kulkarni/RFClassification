@@ -353,76 +353,80 @@ print("Drones labels", y4s_arr[:10], "zeros? x,2,4,10 ", np.all(Xs_norm == 0), n
 class RFUAVNet(nn.Module):
     def __init__(self, num_classes):
         super(RFUAVNet, self).__init__()
+        # ===== CHANGED: ARCHITECTURE PARAMS MATCH PAPER/MATLAB =====
         self.num_classes = num_classes
-
-        # Changed: Use SGD-compatible initialization (paper uses SGD)
-        self.dense = nn.Linear(320, num_classes)
-        self.smax = nn.Softmax(dim=1)
-
-        # r-unit (initial conv block)
-        self.conv1 = nn.Conv1d(in_channels=2, out_channels=64, kernel_size=5, stride=5, padding=2)
-        self.norm1 = nn.BatchNorm1d(num_features=64)
-        self.elu1 = nn.ELU(alpha=1.0, inplace=False)
-
-        # Changed: Fix grouped convolutions (8 groups, 8 filters/group)
-        self.groupconvlist = []
-        for _ in range(4):
-            self.groupconvlist.append(
-                nn.Conv1d(
-                    in_channels=64,
-                    out_channels=64,  # 8 groups × 8 filters = 64
-                    kernel_size=3,
-                    stride=2,
-                    groups=8,  # Paper: 8 groups
-                    padding=1  # Symmetric padding
-                )
-            )
-        self.groupconv = nn.ModuleList(self.groupconvlist)
-        self.elu2 = nn.ModuleList([nn.ELU(alpha=1.0, inplace=False) for _ in range(4)])
-
-        # Changed: Add multi-GAP layers (paper: 4 GAPs concatenated)
-        self.gap_layers = nn.ModuleList([nn.AdaptiveAvgPool1d(1) for _ in range(4)])
-
+        n_groups = 8      # Paper: 8 groups
+        n_filters = 64    # Paper: 64 total filters (8 groups × 8 filters)
+        
+        # r-unit (first conv block)
+        self.conv1 = nn.Conv1d(in_channels=2, out_channels=n_filters, 
+                              kernel_size=5, stride=5, padding=2)
+        self.norm1 = nn.BatchNorm1d(n_filters)  # MATLAB: only in r-unit
+        self.elu1 = nn.ELU(alpha=1.0)
+        
+        # ===== CHANGED: GROUPED CONVS MATCH PAPER (8 GROUPS) =====
+        self.group_convs = nn.ModuleList([
+            nn.Conv1d(n_filters, n_filters, kernel_size=3, 
+                     stride=2, groups=n_groups, padding=1)
+            for _ in range(4)  # 4 g-units
+        ])
+        self.elu2 = nn.ModuleList([nn.ELU(alpha=1.0) for _ in range(4)])
+        
+        # Multi-GAP layers (paper: Section III-C)
+        self.gap_layers = nn.ModuleList([
+            nn.AdaptiveAvgPool1d(1) for _ in range(4)
+        ])
+        
+        # Final layers
+        self.fc = nn.Linear(320, num_classes)  # 256 (multi-gap) + 64 (last gap)
+        self.softmax = nn.Softmax(dim=1)
+    
     def forward(self, x):
         # r-unit
-        x1 = self.runit(x)
-
-        # g-unit 1 with skip-connection
-        xg1 = self.gunit(x1, 0)
-        x2 = self.max_pool(x1)
-        x3 = xg1 + x2  # Skip-connection (aligned via max-pool)
+        x1 = self.conv1(x)
+        x1 = self.norm1(x1)
+        x1 = self.elu1(x1)
+        
+        # ===== CHANGED: SKIP-CONNECTIONS MATCH MATLAB STRUCTURE =====
+        # g-unit 1
+        xg1 = self.group_convs[0](x1)
+        xg1 = self.elu2[0](xg1)
+        xp1 = F.max_pool1d(x1, kernel_size=2, stride=2)  # MATLAB: maxpool_1
+        x2 = xg1 + xp1  # MATLAB: addition_1
         
         # g-unit 2
-        xg2 = self.gunit(x3, 1)
-        x4 = self.max_pool(x3)
-        x5 = xg2 + x4
+        xg2 = self.group_convs[1](x2)
+        xg2 = self.elu2[1](xg2)
+        xp2 = F.max_pool1d(x2, kernel_size=2, stride=2)
+        x3 = xg2 + xp2
         
         # g-unit 3
-        xg3 = self.gunit(x5, 2)
-        x6 = self.max_pool(x5)
-        x7 = x6 + xg3
+        xg3 = self.group_convs[2](x3)
+        xg3 = self.elu2[2](xg3)
+        xp3 = F.max_pool1d(x3, kernel_size=2, stride=2)
+        x4 = xg3 + xp3
         
         # g-unit 4
-        xg4 = self.gunit(x7, 3)
-        x8 = self.max_pool(x7)
-        x_togap = x8 + xg4
+        xg4 = self.group_convs[3](x4)
+        xg4 = self.elu2[3](xg4)
+        xp4 = F.max_pool1d(x4, kernel_size=2, stride=2)
+        x5 = xg4 + xp4
         
-        # Changed: Multi-GAP (collect features from all 4 g-units)
-        f_gap_1 = self.gap_layers[0](xg1)
-        f_gap_2 = self.gap_layers[1](xg2)
-        f_gap_3 = self.gap_layers[2](xg3)
-        f_gap_4 = self.gap_layers[3](xg4)
-        f_multigap = torch.cat((f_gap_1, f_gap_2, f_gap_3, f_gap_4), 1)  # Paper: Eq. 9
+        # ===== CHANGED: MULTI-GAP MATCHES PAPER EQUATION 9 =====
+        gaps = []
+        for i, x in enumerate([xg1, xg2, xg3, xg4]):
+            gaps.append(self.gap_layers[i](x))
+        f_multigap = torch.cat(gaps, dim=1)  # 256 channels
         
-        # Final GAP and concatenation (paper: Eq. 10)
-        f_gap_add = self.gap_layers[0](x_togap)  # GAP from last skip-connection
-        f_final = torch.cat((f_multigap, f_gap_add), 1)  # 256 + 64 = 320 channels
-        f_flat = f_final.flatten(start_dim=1)
-
-        # Output layer
-        out = self.dense(f_flat)
-        out = self.smax(out)
-        return out
+        # Final GAP (paper: Eq. 10)
+        f_gap_add = self.gap_layers[0](x5)  # 64 channels
+        f_final = torch.cat([f_multigap, f_gap_add], dim=1)  # 320 channels
+        f_final = f_final.view(f_final.size(0), -1)
+        
+        # Output
+        out = self.fc(f_final)
+        return self.softmax(out)
+    # ===== END CHANGED ARCHITECTURE =====
 
     # Helper functions (unchanged)
     def runit(self, x):
