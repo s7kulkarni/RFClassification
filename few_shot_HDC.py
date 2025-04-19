@@ -199,7 +199,7 @@ feat_format = 'ARR'
 which_dataset = 'dronerf'
 output_tensor = False
 in_features = 2049
-DIMENSIONS = 3333
+DIMENSIONS = 10000
 seed = 86
 perturbation_type = 'uap'
 
@@ -287,10 +287,10 @@ fold_accuracies = []
 
 # Few-shot learning: Number of samples per class for training
 n_samples_per_class = 5
-bws = [0.25*i for i in range(1, 2)]
-seeds = [5*i for i in range(21)]
-seeds.append(11)
-seeds.append(86)
+bws = [0.25*i for i in range(1, 101)]
+seeds = [50]
+# seeds.append(11)
+# seeds.append(86)
 optimal_params = {'accuracy':0,
                   'bw':0,
                   'seed':0}
@@ -324,8 +324,8 @@ for bw in bws:
             test_ld = torch.utils.data.DataLoader(test_dataset, batch_size=1, shuffle=False)
 
 
-            encode = RandomProjectionEncoder(DIMENSIONS, in_features).to(device)
-            # encode = RFFEncoder(in_features, DIMENSIONS, bw, seed).to(device)
+            # encode = RandomProjectionEncoder(DIMENSIONS, in_features).to(device)
+            encode = RFFEncoder(in_features, DIMENSIONS, bw, seed).to(device)
             model = Centroid(DIMENSIONS, len(label_encoder.classes_)).to(device)
 
             
