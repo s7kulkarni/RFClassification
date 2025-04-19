@@ -213,8 +213,8 @@ print("dataset loaded")
 # X_use, y_use = dataset.get_arrays()
 X, Y = get_arrays_efficient(dataset, batch_size=64)
 # X_perturbed, Y_perturbed = get_arrays_efficient(perturbed_dataset, batch_size=64)
-print("SHAPES ", X.shape, Y.shape, X_perturbed.shape, Y_perturbed.shape)
-print("ARE WE EVEN PERTURBING: ", not np.allclose(X, X_perturbed, atol=1e-5))
+# print("SHAPES ", X.shape, Y.shape, X_perturbed.shape, Y_perturbed.shape)
+# print("ARE WE EVEN PERTURBING: ", not np.allclose(X, X_perturbed, atol=1e-5))
 
 # perturbation = X_perturbed - X
 # perturbation_norm = np.linalg.norm(perturbation, axis=1).mean()
