@@ -211,12 +211,7 @@ def test_model(rp_encode, rff_encode, sin_encode, rp_model, rff_model, sin_model
             rff_preds = rff_model(rff_samples_hv)
             sin_preds = sin_model(sin_samples_hv)
 
-            print(rp_preds)
-            print(rff_preds)
-            print(sin_preds)
-
             total_preds = rp_preds + rff_preds + sin_preds
-            print(total_preds, "total")
 
             # Compute accuracy
             correct += accuracy(total_preds, labels)
