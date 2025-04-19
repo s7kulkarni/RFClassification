@@ -131,17 +131,15 @@ class RFFEncoder(torch.nn.Module):
         return proj
     
 class LevelEncoder(nn.Module):
-    def __init__(self, out_features, in_features, levels=1000):
+    def __init__(self, out_features, size, levels):
         super(LevelEncoder, self).__init__()
         self.flatten = torch.nn.Flatten()
-        self.position = torchhd.embeddings.Random(in_features, out_features)
         self.value = torchhd.embeddings.Level(levels, out_features)
 
     def forward(self, x):
         x = self.flatten(x)
-        sample_hv = torchhd.bind(self.position.weight, self.value(x))
-        sample_hv = torchhd.multiset(sample_hv)
-        return torchhd.hard_quantize(sample_hv)
+        sample_hv = self.value(x)
+        return torchhd.sign(sample_hv)
 
 # Random Projection Encoder
 class RandomProjectionEncoder(nn.Module):
@@ -249,7 +247,7 @@ fold_accuracies = []
 n_samples_per_class = 5
 bws = [0.25*i for i in range(1, 101)]
 bws = [21]
-seeds = [50]
+seeds = [95]
 # seeds.append(11)
 # seeds.append(86)
 optimal_params = {'accuracy':0,
