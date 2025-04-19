@@ -120,7 +120,7 @@ class RFFEncoder(torch.nn.Module):
         proj = torch.cos(proj) * torch.sqrt(torch.tensor(2.0, device=proj.device) / self.dim)
         
         # Apply sign function and add back batch dimension
-        # proj = torch.sign(proj)
+        proj = torch.sign(proj)
         proj = proj.unsqueeze(0)
         
         # Check for zero vectors (debugging)
@@ -331,7 +331,7 @@ for bw in bws:
             
             # Train the model
             train_full_precision(encode, model)
-            model.normalize()
+            # model.normalize()
 
             # Test the model
             accuracy_value = test_model(encode, model)
