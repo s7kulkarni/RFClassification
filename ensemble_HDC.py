@@ -139,7 +139,7 @@ class LevelEncoder(nn.Module):
     def forward(self, x):
         x = self.flatten(x)
         sample_hv = self.value(x)
-        return torchhd.sign(sample_hv)
+        return torchhd.hard_quantize(sample_hv)
 
 # Random Projection Encoder
 class RandomProjectionEncoder(nn.Module):
