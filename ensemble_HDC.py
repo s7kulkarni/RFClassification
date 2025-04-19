@@ -192,7 +192,7 @@ def train_full_precision(encode, model):
             # Add the encoded hypervectors to the model
             model.add_online(samples_hv, labels)
 
-def test_model(encode, model):
+def test_model(rp_encode, rff_encode, sin_encode, rp_model, rff_model, sin_model):
     accuracy = torchmetrics.Accuracy("multiclass", num_classes=len(label_encoder.classes_)).to(device)
     correct = 0
     total = 0
@@ -201,14 +201,25 @@ def test_model(encode, model):
             samples = samples.to(device)
             labels = labels.to(device)
 
-            # Encode the test samples using the random projection matrix
-            samples_hv = encode(samples)
+            # Encode the test samples
+            rp_samples_hv = rp_encode(samples)
+            rff_samples_hv = rff_encode(samples)
+            sin_samples_hv = sin_encode(samples)
 
             # Get the predictions from the Centroid model by passing encoded hypervectors
-            preds = model(samples_hv)
+            rp_preds = rp_model(rp_samples_hv)
+            rff_preds = rff_model(rff_samples_hv)
+            sin_preds = sin_model(sin_samples_hv)
+
+            print(rp_preds)
+            print(rff_preds)
+            print(sin_preds)
+
+            total_preds = rp_preds + rff_preds + sin_preds
+            print(total_preds, "total")
 
             # Compute accuracy
-            correct += accuracy(preds, labels)
+            correct += accuracy(total_preds, labels)
             total += labels.size(0)
 
     accuracy_value = correct / total
@@ -224,7 +235,7 @@ feat_format = 'ARR'
 which_dataset = 'dronerf'
 output_tensor = False
 in_features = 2049
-DIMENSIONS = 10000
+DIMENSIONS = 3333
 seed = 86
 perturbation_type = 'uap'
 
@@ -296,19 +307,24 @@ for bw in bws:
             test_ld = torch.utils.data.DataLoader(test_dataset, batch_size=1, shuffle=False)
 
 
-            # encode = RandomProjectionEncoder(DIMENSIONS, in_features).to(device)
-            # encode = RFFEncoder(in_features, DIMENSIONS, bw, seed).to(device)
-            # encode = LevelEncoder(DIMENSIONS, in_features, levels=1000)
-            encode = SinusoidEncoder(DIMENSIONS, in_features)
-            model = Centroid(DIMENSIONS, len(label_encoder.classes_)).to(device)
+            rp_encode = RandomProjectionEncoder(DIMENSIONS, in_features).to(device)
+            rp_model = Centroid(DIMENSIONS, len(label_encoder.classes_)).to(device)
+
+            rff_encode = RFFEncoder(in_features, DIMENSIONS, bw, seed).to(device)
+            rff_model = Centroid(DIMENSIONS, len(label_encoder.classes_)).to(device)
+
+            sin_encode = SinusoidEncoder(DIMENSIONS, in_features)
+            sin_model = Centroid(DIMENSIONS, len(label_encoder.classes_)).to(device)
 
             
             # Train the model
-            train_full_precision(encode, model)
+            train_full_precision(rp_encode, rp_model)
+            train_full_precision(rff_encode, rff_model)
+            train_full_precision(sin_encode, sin_model)
             # model.normalize()
 
             # Test the model
-            accuracy_value = test_model(encode, model)
+            accuracy_value = test_model(rp_encode, rff_encode, sin_encode, rp_model, rff_model, sin_model)
             fold_accuracies.append(accuracy_value)
             print(f"Fold {fold + 1} Accuracy: {accuracy_value:.4f}")
 
