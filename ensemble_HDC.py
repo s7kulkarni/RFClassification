@@ -130,15 +130,28 @@ class RFFEncoder(torch.nn.Module):
         
         return proj
     
+class SinusoidEncoder(nn.Module):
+    def __init__(self, out_features, in_features):
+        super(SinusoidEncoder, self).__init__()
+        self.flatten = torch.nn.Flatten()
+        self.nonlinear_projection = torchhd.embeddings.Sinusoid(in_features, out_features)
+
+    def forward(self, x):
+        x = self.flatten(x)
+        sample_hv = self.nonlinear_projection(x)
+        return torchhd.hard_quantize(sample_hv)
+
 class LevelEncoder(nn.Module):
-    def __init__(self, out_features, size, levels):
+    def __init__(self, out_features, in_features, levels):
         super(LevelEncoder, self).__init__()
         self.flatten = torch.nn.Flatten()
+        self.position = torchhd.embeddings.Random(in_features, out_features)
         self.value = torchhd.embeddings.Level(levels, out_features)
 
     def forward(self, x):
         x = self.flatten(x)
-        sample_hv = self.value(x)
+        sample_hv = torchhd.bind(self.position.weight, self.value(x))
+        sample_hv = torchhd.multiset(sample_hv)
         return torchhd.hard_quantize(sample_hv)
 
 # Random Projection Encoder
@@ -285,7 +298,8 @@ for bw in bws:
 
             # encode = RandomProjectionEncoder(DIMENSIONS, in_features).to(device)
             # encode = RFFEncoder(in_features, DIMENSIONS, bw, seed).to(device)
-            encode = LevelEncoder(DIMENSIONS, in_features, levels=1000)
+            # encode = LevelEncoder(DIMENSIONS, in_features, levels=1000)
+            encode = SinusoidEncoder(DIMENSIONS, in_features)
             model = Centroid(DIMENSIONS, len(label_encoder.classes_)).to(device)
 
             
