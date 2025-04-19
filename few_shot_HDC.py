@@ -199,7 +199,7 @@ feat_format = 'ARR'
 which_dataset = 'dronerf'
 output_tensor = False
 in_features = 2049
-DIMENSIONS = 10000
+DIMENSIONS = 3333
 seed = 86
 perturbation_type = 'uap'
 
@@ -207,20 +207,20 @@ print('Loading DroneRF Dataset')
 highlow = 'L'
 dataset = DroneRFTorch(dronerf_feat_path, feat_name, t_seg, n_per_seg,
                     feat_format, output_name, output_tensor, highlow)
-perturbed_dataset = DroneRFTorchPerturbed(dronerf_feat_path, feat_name, t_seg, n_per_seg,
-                    feat_format, output_name, output_tensor, highlow, norm_ratio, perturbation_type, output_name)
+# perturbed_dataset = DroneRFTorchPerturbed(dronerf_feat_path, feat_name, t_seg, n_per_seg,
+#                     feat_format, output_name, output_tensor, highlow, norm_ratio, perturbation_type, output_name)
 print("dataset loaded")
 # X_use, y_use = dataset.get_arrays()
 X, Y = get_arrays_efficient(dataset, batch_size=64)
-X_perturbed, Y_perturbed = get_arrays_efficient(perturbed_dataset, batch_size=64)
+# X_perturbed, Y_perturbed = get_arrays_efficient(perturbed_dataset, batch_size=64)
 print("SHAPES ", X.shape, Y.shape, X_perturbed.shape, Y_perturbed.shape)
 print("ARE WE EVEN PERTURBING: ", not np.allclose(X, X_perturbed, atol=1e-5))
 
-perturbation = X_perturbed - X
-perturbation_norm = np.linalg.norm(perturbation, axis=1).mean()
-original_norm = np.linalg.norm(X, axis=1).mean()
-average_ratio = perturbation_norm / original_norm
-print("Average perturbation ratio (mean-to-mean):", average_ratio)
+# perturbation = X_perturbed - X
+# perturbation_norm = np.linalg.norm(perturbation, axis=1).mean()
+# original_norm = np.linalg.norm(X, axis=1).mean()
+# average_ratio = perturbation_norm / original_norm
+# print("Average perturbation ratio (mean-to-mean):", average_ratio)
 
 ##### RANDOM PERTURBATION GENERATION
 original_norms = np.linalg.norm(X, axis=1)
@@ -274,9 +274,9 @@ Y_int = label_encoder.fit_transform(Y)
 X_tensor = torch.tensor(X, dtype=torch.float32)  # (219, 4097)
 Y_tensor = torch.tensor(Y_int, dtype=torch.long)  # (219,)
 
-Y_perturbed = label_encoder.fit_transform(Y_perturbed)
-X_perturbed = torch.tensor(X_perturbed, dtype=torch.float32)  # (219, 4097)
-Y_perturbed = torch.tensor(Y_perturbed, dtype=torch.long)  # (219,)
+# Y_perturbed = label_encoder.fit_transform(Y_perturbed)
+# X_perturbed = torch.tensor(X_perturbed, dtype=torch.float32)  # (219, 4097)
+# Y_perturbed = torch.tensor(Y_perturbed, dtype=torch.long)  # (219,)
 
 # K-Fold Cross-Validation
 k_folds = 5  # You can change this
@@ -294,6 +294,7 @@ optimal_params = {'accuracy':0,
                   'seed':0}
 for bw in bws:
     for seed in seeds:
+        fold_accuracies = []
         for fold, (train_idx, test_idx) in enumerate(skf.split(X_tensor, Y_tensor)):
             set_seed(seed)
             print(f"Fold {fold + 1}/{k_folds}")
@@ -315,7 +316,7 @@ for bw in bws:
 
             # Create DataLoader for training and testing
             train_dataset = torch.utils.data.TensorDataset(X_train, Y_train)
-            test_dataset = torch.utils.data.TensorDataset(X_perturbed[test_idx], Y_perturbed[test_idx])
+            test_dataset = torch.utils.data.TensorDataset(X_test, Y_test)
 
             train_ld = torch.utils.data.DataLoader(train_dataset, batch_size=1, shuffle=True)
             test_ld = torch.utils.data.DataLoader(test_dataset, batch_size=1, shuffle=False)
