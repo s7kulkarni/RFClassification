@@ -288,7 +288,9 @@ fold_accuracies = []
 # Few-shot learning: Number of samples per class for training
 n_samples_per_class = 5
 bws = [0.25*i for i in range(1, 2)]
-seeds = [86]
+seeds = [5*i for i in range(21)]
+seeds.append(11)
+seeds.append(86)
 optimal_params = {'accuracy':0,
                   'bw':0,
                   'seed':0}
