@@ -266,7 +266,7 @@ fold_accuracies = []
 n_samples_per_class = 5
 bws = [0.25*i for i in range(1, 101)]
 bws = [21]
-seeds = [95]
+seeds = [70]
 # seeds.append(11)
 # seeds.append(86)
 optimal_params = {'accuracy':0,
