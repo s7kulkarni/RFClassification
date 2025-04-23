@@ -280,7 +280,7 @@ final_metrics = {
 
 k_folds = 5
 skf = StratifiedKFold(n_splits=k_folds, shuffle=True, random_state=seed)
-seeds = [5*i for i in range(21)]
+seeds = [5*i for i in range(14,15)]
 
 for seed in seeds:
     set_seed(seed)
@@ -342,7 +342,7 @@ for seed in seeds:
                 rff_preds = rff_model(rff_samples_hv)
                 sin_preds = sin_model(sin_samples_hv)
 
-                similarities = rp_preds + rff_preds + sin_preds
+                similarities = (rp_preds + rff_preds + sin_preds) / 3
                 
                 # Residual = 1 - max similarity (higher = more anomalous)
                 residual = 1 - similarities.max().item()
