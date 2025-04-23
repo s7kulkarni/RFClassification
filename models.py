@@ -199,8 +199,8 @@ class PsdSVM():
                 few_shot_train_indices.extend(selected_indices)
 
             # Use only the selected few-shot samples for training
-            # X_train = X_train[few_shot_train_indices]
-            # Y_train = Y_train[few_shot_train_indices]
+            X_train = X_train[few_shot_train_indices]
+            Y_train = Y_train[few_shot_train_indices]
 
             clf.fit(X_train, Y_train)
 

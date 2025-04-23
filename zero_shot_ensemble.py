@@ -314,7 +314,7 @@ for seed in seeds:
             rp_encode = RandomProjectionEncoder(DIMENSIONS, in_features).to(device)
             rp_model = Centroid(DIMENSIONS, len(label_encoder.classes_)).to(device)
 
-            rff_encode = RFFEncoder(in_features, DIMENSIONS, bw, seed).to(device)
+            rff_encode = RFFEncoder(in_features, DIMENSIONS, 21, seed).to(device)
             rff_model = Centroid(DIMENSIONS, len(label_encoder.classes_)).to(device)
 
             sin_encode = SinusoidEncoder(DIMENSIONS, in_features)
@@ -332,7 +332,7 @@ for seed in seeds:
             y_true = []
             for x, y in zip(X_test, Y_test):
                 x = x.unsqueeze(0).to(device)
-                
+
                 rp_samples_hv = rp_encode(x)
                 rff_samples_hv = rff_encode(x)
                 sin_samples_hv = sin_encode(x)
