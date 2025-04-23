@@ -175,7 +175,7 @@ class PsdSVM():
         self.print_result(str(k_fold)+' Fold GridSearch CV', self.grid_acc_ls, self.grid_f1_ls, self.grid_runt_ls)
         return self.grid_acc_ls, self.grid_f1_ls, self.grid_runt_ls, self.grid_best_params_ls
         
-    def run_gridsearch(self, X, y, params, k_fold=5):
+    def run_gridsearch(self, X, y, params, k_fold=5, n_samples_per_class=5):
         self.grid_best_params_ls = []
         self.grid_acc_ls = []
         self.grid_f1_ls = []
@@ -188,7 +188,21 @@ class PsdSVM():
             # find the optimal hypber parameters
             svc = svm.SVC(kernel='rbf', gamma = self.gamma)
             clf = GridSearchCV(svc, params, n_jobs=1)
-            clf.fit(X[train_ix], y[train_ix])
+
+            X_train, X_test = X[train_ix], X[test_ix]
+            Y_train, Y_test = y[train_ix], y[test_ix]
+
+            few_shot_train_indices = []
+            for class_label in np.unique(Y_train):
+                class_indices = np.where(Y_train == class_label)[0]
+                selected_indices = np.random.choice(class_indices, size=n_samples_per_class, replace=False)
+                few_shot_train_indices.extend(selected_indices)
+
+            # Use only the selected few-shot samples for training
+            # X_train = X_train[few_shot_train_indices]
+            # Y_train = Y_train[few_shot_train_indices]
+
+            clf.fit(X_train, Y_train)
 
             print('Fold '+str(i+1)+' Best Parameters: '+ str(clf.best_params_))
             self.grid_best_params_ls.append(clf.best_params_)

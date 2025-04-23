@@ -153,8 +153,9 @@ gammas=list(map(lambda x:pow(2,x),range(-3,10,2)))
 parameters = {'C':Cs, 'gamma':gammas}
 
 k_fold=5
+n_samples_per_class = 5
 
-# accs, f1s, runts, best_params = model.run_gridsearch(X_use, y_use, parameters, k_fold)
+accs, f1s, runts, best_params = model.run_gridsearch(X_use, y_use, parameters, k_fold, n_samples_per_class)
 # accs, f1s, runts, best_params = model.run_gridsearch_perturbed(X_use, y_use, X_perturbed, y_perturbed, parameters, k_fold)
 
 #################################### MY OWN TESTING ########################################
@@ -180,8 +181,8 @@ for fold, (train_idx, test_idx) in enumerate(skf.split(X_use, y_use)):
         few_shot_train_indices.extend(selected_indices)
 
     # Use only the selected few-shot samples for training
-    # X_train = X_train[few_shot_train_indices]
-    # Y_train = Y_train[few_shot_train_indices]
+    X_train = X_train[few_shot_train_indices]
+    Y_train = Y_train[few_shot_train_indices]
 
 
     svc.fit(X_train, Y_train)
