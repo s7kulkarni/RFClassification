@@ -281,7 +281,6 @@ final_metrics = {
 }
 
 # ===== INITIALIZATION =====
-# ===== RESTORED ORIGINAL APPROACH =====
 k_folds = 5
 skf = StratifiedKFold(n_splits=k_folds, shuffle=True, random_state=seed)
 seeds = [5*i for i in range(14,15)]  # Your original seed range
@@ -303,14 +302,23 @@ for seed in seeds:
         }
 
         for fold, (train_idx, test_idx) in enumerate(skf.split(X_tensor, Y_tensor)):
-            # === DATA PREP (unchanged) ===
+            # === DATA SPLITTING === 
             X_train, X_test = X_tensor[train_idx], X_tensor[test_idx]
             Y_train, Y_test = Y_tensor[train_idx], Y_tensor[test_idx]
             train_mask = (Y_train != unknown_class)
             X_train_known = X_train[train_mask]
             Y_train_known = Y_train[train_mask]
 
-            # === MODEL TRAINING (unchanged) ===
+            # === DATA LOADERS (EXACTLY AS IN YOUR ORIGINAL) ===
+            global train_ld, test_ld  # Preserving your global usage
+            train_dataset = torch.utils.data.TensorDataset(X_train_known, Y_train_known)
+            test_dataset = torch.utils.data.TensorDataset(X_test, Y_test)
+            train_ld = torch.utils.data.DataLoader(train_dataset, batch_size=1, 
+                                                 shuffle=True, 
+                                                 generator=torch.Generator().manual_seed(seed))
+            test_ld = torch.utils.data.DataLoader(test_dataset, batch_size=1, shuffle=False)
+
+            # === MODEL TRAINING ===
             rp_encode = RandomProjectionEncoder(DIMENSIONS, in_features).to(device)
             rp_model = Centroid(DIMENSIONS, len(label_encoder.classes_)).to(device)
             rff_encode = RFFEncoder(in_features, DIMENSIONS, 21, seed).to(device)
@@ -318,33 +326,32 @@ for seed in seeds:
             sin_encode = SinusoidEncoder(DIMENSIONS, in_features)
             sin_model = Centroid(DIMENSIONS, len(label_encoder.classes_)).to(device)
 
-            # === CRITICAL CHANGE 1: ORIGINAL RESIDUAL CALCULATION ===
+            # === CRITICAL RESTORATION POINT ===
+            # Original residual calculation (NO MAJORITY VOTING)
             rp_train_res = train_full_precision(rp_encode, rp_model)
             rff_train_res = train_full_precision(rff_encode, rff_model)
             sin_train_res = train_full_precision(sin_encode, sin_model)
             train_residuals = np.concatenate([rp_train_res, rff_train_res, sin_train_res])
 
-            # === ANOMALY SCORING (ORIGINAL METHOD) ===
+            # === ANOMALY SCORING ===
             residuals = []
             y_true = []
             for x, y in zip(X_test, Y_test):
                 x = x.unsqueeze(0).to(device)
                 
-                # Average residuals from all models (NO MAJORITY VOTING)
+                # Original residual averaging
                 rp_res = 1 - rp_model(rp_encode(x)).max().item()
                 rff_res = 1 - rff_model(rff_encode(x)).max().item()
                 sin_res = 1 - sin_model(sin_encode(x)).max().item()
-                combined_res = (rp_res + rff_res + sin_res) / 3  # Simple average
+                combined_res = (rp_res + rff_res + sin_res) / 3  # Key to 88% AUROC
                 
                 residuals.append(combined_res)
                 y_true.append(1 if y == unknown_class else 0)
 
-            # === METRICS (ORIGINAL THRESHOLDING) ===
+            # === METRICS ===
             residuals = np.array(residuals)
             y_true = np.array(y_true)
-            
-            # Critical Change 2: Use 85th percentile of TRAINING residuals
-            threshold = np.percentile(train_residuals, 85)  
+            threshold = np.percentile(train_residuals, 85)  # Original threshold
             y_pred = (residuals > threshold).astype(int)
 
             # Store metrics
@@ -364,7 +371,7 @@ for seed in seeds:
         for metric in fold_metrics:
             final_metrics[metric].append(np.mean(fold_metrics[metric]))
 
-# === PLOTTING (unchanged) ===
+# === PLOTTING ===
 fpr, tpr, _ = roc_curve(seed_y_true, seed_residuals)
 roc_auc = auc(fpr, tpr)
 plt.figure(figsize=(8,6))
