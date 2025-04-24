@@ -290,7 +290,7 @@ best_seed_data = {
 
 k_folds = 5
 skf = StratifiedKFold(n_splits=k_folds, shuffle=True, random_state=seed)
-seeds = [5*i for i in range(21)]
+seeds = [5*i for i in range(14,15)]
 
 for seed in seeds:
     set_seed(seed)
