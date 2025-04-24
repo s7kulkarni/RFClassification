@@ -281,22 +281,10 @@ final_metrics = {
 }
 
 # ===== INITIALIZATION =====
+# ===== RESTORED ORIGINAL APPROACH =====
 k_folds = 5
 skf = StratifiedKFold(n_splits=k_folds, shuffle=True, random_state=seed)
-seeds = [5*i for i in range(14,15)]  # Only testing seed=70
-
-# Tracking variables
-best_auc = 0
-best_seed = None
-best_y_true = []
-best_residuals = []
-final_metrics = {  # Initialize metrics storage
-    'precision': [],
-    'recall': [],
-    'f1': [],
-    'auroc': [],
-    'specificity': []
-}
+seeds = [5*i for i in range(14,15)]  # Your original seed range
 
 for seed in seeds:
     set_seed(seed)
@@ -315,66 +303,49 @@ for seed in seeds:
         }
 
         for fold, (train_idx, test_idx) in enumerate(skf.split(X_tensor, Y_tensor)):
-            # === DATA SPLITTING === 
+            # === DATA PREP (unchanged) ===
             X_train, X_test = X_tensor[train_idx], X_tensor[test_idx]
             Y_train, Y_test = Y_tensor[train_idx], Y_tensor[test_idx]
             train_mask = (Y_train != unknown_class)
             X_train_known = X_train[train_mask]
             Y_train_known = Y_train[train_mask]
 
-            # === DATA LOADERS ===
-            train_dataset = torch.utils.data.TensorDataset(X_train_known, Y_train_known)
-            test_dataset = torch.utils.data.TensorDataset(X_test, Y_test)
-            train_ld = torch.utils.data.DataLoader(train_dataset, batch_size=1, 
-                                                 shuffle=True, 
-                                                 generator=torch.Generator().manual_seed(seed))
-            test_ld = torch.utils.data.DataLoader(test_dataset, batch_size=1, shuffle=False)
-
-            # Train HDC model (3 classes)
+            # === MODEL TRAINING (unchanged) ===
             rp_encode = RandomProjectionEncoder(DIMENSIONS, in_features).to(device)
             rp_model = Centroid(DIMENSIONS, len(label_encoder.classes_)).to(device)
-
             rff_encode = RFFEncoder(in_features, DIMENSIONS, 21, seed).to(device)
             rff_model = Centroid(DIMENSIONS, len(label_encoder.classes_)).to(device)
-
             sin_encode = SinusoidEncoder(DIMENSIONS, in_features)
             sin_model = Centroid(DIMENSIONS, len(label_encoder.classes_)).to(device)
 
+            # === CRITICAL CHANGE 1: ORIGINAL RESIDUAL CALCULATION ===
             rp_train_res = train_full_precision(rp_encode, rp_model)
             rff_train_res = train_full_precision(rff_encode, rff_model)
             sin_train_res = train_full_precision(sin_encode, sin_model)
+            train_residuals = np.concatenate([rp_train_res, rff_train_res, sin_train_res])
 
-            # === ANOMALY DETECTION ===
-            fold_y_true = []
-            fold_residuals = []
-            
+            # === ANOMALY SCORING (ORIGINAL METHOD) ===
+            residuals = []
+            y_true = []
             for x, y in zip(X_test, Y_test):
                 x = x.unsqueeze(0).to(device)
                 
-                # Get residuals from all models
+                # Average residuals from all models (NO MAJORITY VOTING)
                 rp_res = 1 - rp_model(rp_encode(x)).max().item()
                 rff_res = 1 - rff_model(rff_encode(x)).max().item()
                 sin_res = 1 - sin_model(sin_encode(x)).max().item()
+                combined_res = (rp_res + rff_res + sin_res) / 3  # Simple average
                 
-                combined_res = (rp_res + rff_res + sin_res) / 3
-                
-                fold_residuals.append(combined_res)
-                fold_y_true.append(1 if y == unknown_class else 0)
+                residuals.append(combined_res)
+                y_true.append(1 if y == unknown_class else 0)
 
-            # === METRICS CALCULATION ===
-            residuals = np.array(fold_residuals)
-            y_true = np.array(fold_y_true)
+            # === METRICS (ORIGINAL THRESHOLDING) ===
+            residuals = np.array(residuals)
+            y_true = np.array(y_true)
             
-            # Threshold calculation (using training residuals)
-            rp_thresh = np.percentile(1 - np.array(rp_train_res), 85)
-            rff_thresh = np.percentile(1 - np.array(rff_train_res), 85)
-            sin_thresh = np.percentile(1 - np.array(sin_train_res), 85)
-            
-            # Majority voting
-            rp_preds = (1 - np.array([rp_model(rp_encode(x.unsqueeze(0).to(device))).max().item() for x in X_test])) > rp_thresh
-            rff_preds = (1 - np.array([rff_model(rff_encode(x.unsqueeze(0).to(device))).max().item() for x in X_test])) > rff_thresh
-            sin_preds = (1 - np.array([sin_model(sin_encode(x.unsqueeze(0).to(device))).max().item() for x in X_test])) > sin_thresh
-            y_pred = ((rp_preds + rff_preds + sin_preds) >= 2).astype(int)
+            # Critical Change 2: Use 85th percentile of TRAINING residuals
+            threshold = np.percentile(train_residuals, 85)  
+            y_pred = (residuals > threshold).astype(int)
 
             # Store metrics
             fold_metrics['auroc'].append(roc_auc_score(y_true, residuals))
@@ -386,36 +357,21 @@ for seed in seeds:
             fold_metrics['f1'].append(f1_score(y_true, y_pred))
 
             # Store for seed-level ROC
-            seed_y_true.extend(fold_y_true)
-            seed_residuals.extend(fold_residuals)
+            seed_y_true.extend(y_true)
+            seed_residuals.extend(residuals)
 
-        # === STORE FOLD METRICS ===
+        # Update final metrics
         for metric in fold_metrics:
             final_metrics[metric].append(np.mean(fold_metrics[metric]))
 
-    # === UPDATE BEST SEED ===
-    seed_auc = roc_auc_score(seed_y_true, seed_residuals)
-    if seed_auc > best_auc:
-        best_auc = seed_auc
-        best_seed = seed
-        best_y_true = seed_y_true
-        best_residuals = seed_residuals
-
-# === FINAL OUTPUT ===
-# ROC Curve
-fpr, tpr, _ = roc_curve(best_y_true, best_residuals)
+# === PLOTTING (unchanged) ===
+fpr, tpr, _ = roc_curve(seed_y_true, seed_residuals)
+roc_auc = auc(fpr, tpr)
 plt.figure(figsize=(8,6))
-plt.plot(fpr, tpr, color='darkorange', lw=2, label=f'Seed {best_seed} (AUC = {best_auc:.3f})')
+plt.plot(fpr, tpr, label=f'AUC = {roc_auc:.3f}')
 plt.plot([0,1],[0,1], 'k--')
 plt.xlabel('False Positive Rate')
 plt.ylabel('True Positive Rate')
-plt.title('Anomaly Detection ROC Curve')
+plt.title('Original High-Performance ROC')
 plt.legend(loc="lower right")
-plt.savefig(f'best_seed_roc.png', dpi=300, bbox_inches='tight')
-
-# Metrics
-print("\n=== Final Metrics ===")
-print(f"Best Seed: {best_seed} (AUC = {best_auc:.4f})")
-
-for metric in final_metrics:
-    print(f"Mean {metric}: {np.mean(final_metrics[metric]):.4f}")
+plt.savefig('original_high_roc.png', dpi=300)
