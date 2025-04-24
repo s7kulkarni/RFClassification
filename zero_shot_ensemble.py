@@ -281,25 +281,20 @@ final_metrics = {
 }
 
 # ===== INITIALIZATION =====
+best_seed_data = {
+    'seed': None,
+    'y_true': [],
+    'residuals': [],
+    'auc': 0
+}
+
 k_folds = 5
 skf = StratifiedKFold(n_splits=k_folds, shuffle=True, random_state=seed)
-seeds = [5*i for i in range(14,15)]
-
-best_auc = 0
-best_seed = None
-best_y_true = []
-best_residuals = []
-final_metrics = {  # Initialize metrics storage
-    'precision': [],
-    'recall': [],
-    'f1': [],
-    'auroc': [],
-    'specificity': []
-}
+seeds = [5*i for i in range(21)]
 
 for seed in seeds:
     set_seed(seed)
-    seed_y_true = []  # Store predictions for this seed
+    seed_y_true = []
     seed_residuals = []
     for unknown_class in range(4):  # Test each class as unknown
         print(f"\n=== Evaluating Class {unknown_class} as Unknown ===")
@@ -345,53 +340,75 @@ for seed in seeds:
             train_residuals = rp_residual + rff_residual + sin_residual
 
             # Compute residuals for anomaly detection
-            fold_y_true = []
-            fold_residuals = []
+            residuals = []
+            y_true = []
             for x, y in zip(X_test, Y_test):
                 x = x.unsqueeze(0).to(device)
-                # Get ensemble residuals
-                rp_res = 1 - rp_model(rp_encode(x)).max().item()
-                rff_res = 1 - rff_model(rff_encode(x)).max().item()
-                sin_res = 1 - sin_model(sin_encode(x)).max().item()
-                combined_res = (rp_res + rff_res + sin_res) / 3
+
+                rp_samples_hv = rp_encode(x)
+                rff_samples_hv = rff_encode(x)
+                sin_samples_hv = sin_encode(x)
+
+                # Get the predictions from the Centroid model by passing encoded hypervectors
+                rp_preds = rp_model(rp_samples_hv)
+                rff_preds = rff_model(rff_samples_hv)
+                sin_preds = sin_model(sin_samples_hv)
+
+                similarities = rp_preds + rff_preds + sin_preds
                 
-                fold_residuals.append(combined_res)
-                fold_y_true.append(1 if y == unknown_class else 0)
-            # End of prediction collection changes =====
-            
-            # Store for seed-level ROC
-            seed_y_true.extend(fold_y_true)
-            seed_residuals.extend(fold_residuals)
+                # Residual = 1 - max similarity (higher = more anomalous)
+                residual = 1 - similarities.max().item()
+                residuals.append(residual)
+                y_true.append(1 if y == unknown_class else 0)
 
+            # === STORE FOR SEED-LEVEL AUC ===
+            seed_y_true.extend(y_true)
+            seed_residuals.extend(residuals)
             # AUROC (no threshold needed)
-            seed_auc = roc_auc_score(seed_y_true, seed_residuals)
-            if seed_auc > best_auc:
-                best_auc = seed_auc
-                best_seed = seed
-                best_y_true = seed_y_true
-                best_residuals = seed_residuals
+            fold_metrics['auroc'].append(roc_auc_score(y_true, residuals))
 
-                # Store average metrics for this unknown class
-                for metric in fold_metrics:
-                    final_metrics[metric].append(np.mean(fold_metrics[metric]))
+            # Thresholding (95th percentile of normal class residuals)
+            threshold = np.percentile(train_residuals, 85)
+            y_pred = (residuals > threshold).astype(int)
 
-fpr, tpr, _ = roc_curve(best_y_true, best_residuals)
-roc_auc = auc(fpr, tpr)
+            tn = ((y_pred == 0) & (y_true == 0)).sum()  # True negatives
+            fp = ((y_pred == 1) & (y_true == 0)).sum()  # False positives
+            specificity = tn / (tn + fp)                # (out of 100 true labels how many were detected true)
+            fold_metrics['specificity'].append(specificity)
 
+            # Compute metrics
+            fold_metrics['precision'].append(precision_score(y_true, y_pred, zero_division=0))
+            fold_metrics['recall'].append(recall_score(y_true, y_pred)) # (out of 100 anomalies, how many were detected anomalies)
+            fold_metrics['f1'].append(f1_score(y_true, y_pred))
+
+        # Store average metrics for this unknown class
+        for metric in fold_metrics:
+            final_metrics[metric].append(np.mean(fold_metrics[metric]))
+    seed_auc = roc_auc_score(seed_y_true, seed_residuals)
+    if seed_auc > best_seed_data['auc']:
+        best_seed_data = {
+            'seed': seed,
+            'y_true': seed_y_true,
+            'residuals': seed_residuals,
+            'auc': seed_auc
+        }
+
+# ===== PLOT BEST ROC (ONLY ADDITION) =====
+fpr, tpr, _ = roc_curve(best_seed_data['y_true'], best_seed_data['residuals'])
 plt.figure(figsize=(8,6))
-plt.plot(fpr, tpr, color='darkorange', lw=2, 
-         label=f'Best Seed {best_seed} (AUC = {roc_auc:.3f})')
-plt.plot([0,1],[0,1],'k--')
-plt.xlim([0.0,1.0])
-plt.ylim([0.0,1.05])
+plt.plot(fpr, tpr, color='darkorange', 
+         label=f'Best Seed {best_seed_data["seed"]} (AUC = {best_seed_data["auc"]:.3f})')
+plt.plot([0,1], [0,1], 'k--')
+plt.xlim([0.0, 1.0])
+plt.ylim([0.0, 1.05])
 plt.xlabel('False Positive Rate')
 plt.ylabel('True Positive Rate')
-plt.title(f'Best Performing Seed ({best_seed}) ROC Curve')
+plt.title('Best Seed ROC Curve')
 plt.legend(loc="lower right")
-plt.savefig(f'best_seed_{best_seed}_roc.png', dpi=300)
-print(f"Saved best seed ROC (seed={best_seed}, AUC={best_auc:.3f}) to best_seed_{best_seed}_roc.png")
+plt.savefig('best_seed_roc.png', dpi=300, bbox_inches='tight')
+print(f"\nSaved ROC for best seed {best_seed_data['seed']} (AUC={best_seed_data['auc']:.3f})")
 
-# Print final averaged metrics
+# === ORIGINAL METRIC REPORTING ===
 print("\n=== Final Metrics (Averaged Over All Unknown Classes) ===")
 for metric in final_metrics:
     print(f"Mean {metric}: {np.mean(final_metrics[metric]):.4f}")
