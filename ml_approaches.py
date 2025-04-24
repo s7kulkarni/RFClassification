@@ -140,8 +140,8 @@ print(np.sum(y_use=='None'))
 
 model = PsdSVM(t_seg, n_per_seg)
 
-# accs, f1s, runts = model.run_cv(X_use, y_use, k_fold=5)
-accs, f1s, runts = model.run_cv_perturbed(X_use, y_use, X_perturbed, y_perturbed, k_fold=5)
+accs, f1s, runts = model.run_cv(X_use, y_use, k_fold=5)
+# accs, f1s, runts = model.run_cv_perturbed(X_use, y_use, X_perturbed, y_perturbed, k_fold=5)
 
 for icv in range(5):
     print(model.cv_models[icv].support_vectors_.shape)
