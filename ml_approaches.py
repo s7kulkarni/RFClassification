@@ -68,6 +68,13 @@ def get_arrays_efficient(dataset, batch_size=64):
 
     return X, y
 
+def set_seed(seed):
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed(seed)
+    np.random.seed(seed)
+    random.seed(seed)
+    torch.backends.cudnn.deterministic = True  # Ensure reproducibility if using GPU
+
 
 feat_name = 'PSD'
 t_seg = 250 #ms
@@ -165,6 +172,7 @@ fold_accuracies = []
 k_folds = 5  # You can change this
 n_samples_per_class = 5
 skf = KFold(n_splits=k_folds, shuffle=True, random_state=42)
+set_seed(1)
 
 for fold, (train_idx, test_idx) in enumerate(skf.split(X_use, y_use)):
     print(f"Fold {fold + 1}/{k_folds}")
