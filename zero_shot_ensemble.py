@@ -396,14 +396,14 @@ for seed in seeds:
 # ===== PLOT BEST ROC (ONLY ADDITION) =====
 fpr, tpr, _ = roc_curve(best_seed_data['y_true'], best_seed_data['residuals'])
 plt.figure(figsize=(8,6))
-plt.plot(fpr, tpr, color='darkorange', 
-         label=f'Best Seed {best_seed_data["seed"]} (AUC = {best_seed_data["auc"]:.3f})')
+plt.plot(fpr, tpr, color='green', 
+         label=f'AUC = {best_seed_data["auc"]:.3f}')
 plt.plot([0,1], [0,1], 'k--')
 plt.xlim([0.0, 1.0])
 plt.ylim([0.0, 1.05])
 plt.xlabel('False Positive Rate')
 plt.ylabel('True Positive Rate')
-plt.title('Best Seed ROC Curve')
+plt.title('ROC Curve for Anomaly Detection')
 plt.legend(loc="lower right")
 plt.savefig('best_seed_roc.png', dpi=300, bbox_inches='tight')
 print(f"\nSaved ROC for best seed {best_seed_data['seed']} (AUC={best_seed_data['auc']:.3f})")
