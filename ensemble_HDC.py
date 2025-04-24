@@ -251,9 +251,9 @@ Y_int = label_encoder.fit_transform(Y)
 X_tensor = torch.tensor(X, dtype=torch.float32)  # (219, 4097)
 Y_tensor = torch.tensor(Y_int, dtype=torch.long)  # (219,)
 
-# Y_perturbed = label_encoder.fit_transform(Y_perturbed)
-# X_perturbed = torch.tensor(X_perturbed, dtype=torch.float32)  # (219, 4097)
-# Y_perturbed = torch.tensor(Y_perturbed, dtype=torch.long)  # (219,)
+Y_perturbed = label_encoder.fit_transform(Y_perturbed)
+X_perturbed = torch.tensor(X_perturbed, dtype=torch.float32)  # (219, 4097)
+Y_perturbed = torch.tensor(Y_perturbed, dtype=torch.long)  # (219,)
 
 # K-Fold Cross-Validation
 k_folds = 5  # You can change this
@@ -296,7 +296,7 @@ for bw in bws:
 
             # Create DataLoader for training and testing
             train_dataset = torch.utils.data.TensorDataset(X_train, Y_train)
-            test_dataset = torch.utils.data.TensorDataset(X_test, Y_test)
+            test_dataset = torch.utils.data.TensorDataset(X_perturbed[test_idx], Y_perturbed[test_idx])
 
             train_ld = torch.utils.data.DataLoader(train_dataset, batch_size=1, shuffle=True)
             test_ld = torch.utils.data.DataLoader(test_dataset, batch_size=1, shuffle=False)
