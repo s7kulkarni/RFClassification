@@ -285,6 +285,18 @@ k_folds = 5
 skf = StratifiedKFold(n_splits=k_folds, shuffle=True, random_state=seed)
 seeds = [5*i for i in range(14,15)]
 
+best_auc = 0
+best_seed = None
+best_y_true = []
+best_residuals = []
+final_metrics = {  # Initialize metrics storage
+    'precision': [],
+    'recall': [],
+    'f1': [],
+    'auroc': [],
+    'specificity': []
+}
+
 for seed in seeds:
     set_seed(seed)
     seed_y_true = []  # Store predictions for this seed
