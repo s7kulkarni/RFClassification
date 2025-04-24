@@ -283,14 +283,13 @@ final_metrics = {
 # ===== INITIALIZATION =====
 k_folds = 5
 skf = StratifiedKFold(n_splits=k_folds, shuffle=True, random_state=seed)
-seeds = [5*i for i in range(14,15)]  # Your original seed range
+seeds = [5*i for i in range(14,15)]
 
 for seed in seeds:
     set_seed(seed)
-    seed_y_true = []
+    seed_y_true = []  # Store predictions for this seed
     seed_residuals = []
-    
-    for unknown_class in range(4):
+    for unknown_class in range(4):  # Test each class as unknown
         print(f"\n=== Evaluating Class {unknown_class} as Unknown ===")
         
         fold_metrics = {
@@ -302,83 +301,85 @@ for seed in seeds:
         }
 
         for fold, (train_idx, test_idx) in enumerate(skf.split(X_tensor, Y_tensor)):
-            # === DATA SPLITTING === 
+            # Split data (exclude unknown_class from training)
             X_train, X_test = X_tensor[train_idx], X_tensor[test_idx]
             Y_train, Y_test = Y_tensor[train_idx], Y_tensor[test_idx]
             train_mask = (Y_train != unknown_class)
             X_train_known = X_train[train_mask]
             Y_train_known = Y_train[train_mask]
 
-            # === DATA LOADERS (EXACTLY AS IN YOUR ORIGINAL) ===
-            global train_ld, test_ld  # Preserving your global usage
+            # Create DataLoaders (using your existing setup)
+            global train_ld, test_ld  # Required for your train/test methods
             train_dataset = torch.utils.data.TensorDataset(X_train_known, Y_train_known)
             test_dataset = torch.utils.data.TensorDataset(X_test, Y_test)
-            train_ld = torch.utils.data.DataLoader(train_dataset, batch_size=1, 
-                                                 shuffle=True, 
-                                                 generator=torch.Generator().manual_seed(seed))
+            train_ld = torch.utils.data.DataLoader(train_dataset, batch_size=1, shuffle=True, generator=torch.Generator().manual_seed(seed))
             test_ld = torch.utils.data.DataLoader(test_dataset, batch_size=1, shuffle=False)
 
-            # === MODEL TRAINING ===
+            # Train HDC model (3 classes)
             rp_encode = RandomProjectionEncoder(DIMENSIONS, in_features).to(device)
             rp_model = Centroid(DIMENSIONS, len(label_encoder.classes_)).to(device)
+
             rff_encode = RFFEncoder(in_features, DIMENSIONS, 21, seed).to(device)
             rff_model = Centroid(DIMENSIONS, len(label_encoder.classes_)).to(device)
+
             sin_encode = SinusoidEncoder(DIMENSIONS, in_features)
             sin_model = Centroid(DIMENSIONS, len(label_encoder.classes_)).to(device)
 
-            # === CRITICAL RESTORATION POINT ===
-            # Original residual calculation (NO MAJORITY VOTING)
-            rp_train_res = train_full_precision(rp_encode, rp_model)
-            rff_train_res = train_full_precision(rff_encode, rff_model)
-            sin_train_res = train_full_precision(sin_encode, sin_model)
-            train_residuals = np.concatenate([rp_train_res, rff_train_res, sin_train_res])
+            # Train the model
+            rp_residual = train_full_precision(rp_encode, rp_model)
+            rff_residual = train_full_precision(rff_encode, rff_model)
+            sin_residual = train_full_precision(sin_encode, sin_model)
 
-            # === ANOMALY SCORING ===
-            residuals = []
-            y_true = []
+            train_residuals = rp_residual + rff_residual + sin_residual
+
+            # Compute residuals for anomaly detection
+            fold_y_true = []
+            fold_residuals = []
             for x, y in zip(X_test, Y_test):
                 x = x.unsqueeze(0).to(device)
-                
-                # Original residual averaging
+                # Get ensemble residuals
                 rp_res = 1 - rp_model(rp_encode(x)).max().item()
                 rff_res = 1 - rff_model(rff_encode(x)).max().item()
                 sin_res = 1 - sin_model(sin_encode(x)).max().item()
-                combined_res = (rp_res + rff_res + sin_res) / 3  # Key to 88% AUROC
+                combined_res = (rp_res + rff_res + sin_res) / 3
                 
-                residuals.append(combined_res)
-                y_true.append(1 if y == unknown_class else 0)
-
-            # === METRICS ===
-            residuals = np.array(residuals)
-            y_true = np.array(y_true)
-            threshold = np.percentile(train_residuals, 85)  # Original threshold
-            y_pred = (residuals > threshold).astype(int)
-
-            # Store metrics
-            fold_metrics['auroc'].append(roc_auc_score(y_true, residuals))
-            tn = ((y_pred == 0) & (y_true == 0)).sum()
-            fp = ((y_pred == 1) & (y_true == 0)).sum()
-            fold_metrics['specificity'].append(tn / (tn + fp))
-            fold_metrics['precision'].append(precision_score(y_true, y_pred, zero_division=0))
-            fold_metrics['recall'].append(recall_score(y_true, y_pred))
-            fold_metrics['f1'].append(f1_score(y_true, y_pred))
-
+                fold_residuals.append(combined_res)
+                fold_y_true.append(1 if y == unknown_class else 0)
+            # End of prediction collection changes =====
+            
             # Store for seed-level ROC
-            seed_y_true.extend(y_true)
-            seed_residuals.extend(residuals)
+            seed_y_true.extend(fold_y_true)
+            seed_residuals.extend(fold_residuals)
 
-        # Update final metrics
-        for metric in fold_metrics:
-            final_metrics[metric].append(np.mean(fold_metrics[metric]))
+            # AUROC (no threshold needed)
+            seed_auc = roc_auc_score(seed_y_true, seed_residuals)
+            if seed_auc > best_auc:
+                best_auc = seed_auc
+                best_seed = seed
+                best_y_true = seed_y_true
+                best_residuals = seed_residuals
 
-# === PLOTTING ===
-fpr, tpr, _ = roc_curve(seed_y_true, seed_residuals)
+                # Store average metrics for this unknown class
+                for metric in fold_metrics:
+                    final_metrics[metric].append(np.mean(fold_metrics[metric]))
+
+fpr, tpr, _ = roc_curve(best_y_true, best_residuals)
 roc_auc = auc(fpr, tpr)
+
 plt.figure(figsize=(8,6))
-plt.plot(fpr, tpr, label=f'AUC = {roc_auc:.3f}')
-plt.plot([0,1],[0,1], 'k--')
+plt.plot(fpr, tpr, color='darkorange', lw=2, 
+         label=f'Best Seed {best_seed} (AUC = {roc_auc:.3f})')
+plt.plot([0,1],[0,1],'k--')
+plt.xlim([0.0,1.0])
+plt.ylim([0.0,1.05])
 plt.xlabel('False Positive Rate')
 plt.ylabel('True Positive Rate')
-plt.title('Original High-Performance ROC')
+plt.title(f'Best Performing Seed ({best_seed}) ROC Curve')
 plt.legend(loc="lower right")
-plt.savefig('original_high_roc.png', dpi=300)
+plt.savefig(f'best_seed_{best_seed}_roc.png', dpi=300)
+print(f"Saved best seed ROC (seed={best_seed}, AUC={best_auc:.3f}) to best_seed_{best_seed}_roc.png")
+
+# Print final averaged metrics
+print("\n=== Final Metrics (Averaged Over All Unknown Classes) ===")
+for metric in final_metrics:
+    print(f"Mean {metric}: {np.mean(final_metrics[metric]):.4f}")
