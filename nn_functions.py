@@ -20,7 +20,7 @@ import matplotlib.pyplot as plt
 #             print(f'Reset trainable parameters of layer = {layer}')
 #             layer.reset_parameters()
 
-def runkfoldcv(model, dataset, device, k_folds, batch_size, num_epochs, momentum, l2reg):
+def runkfoldcv(model, dataset, device, k_folds, batch_size, learning_rate, num_epochs, momentum, l2reg):
     # ===== CHANGED: OPTIMIZER CONFIG TO MATCH PAPER =====
     optimizer = torch.optim.SGD(
         model.parameters(),
