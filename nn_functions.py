@@ -41,6 +41,7 @@ def runkfoldcv(model, dataset, device, k_folds, batch_size, learning_rate, num_e
     results = {}
     
     for fold, (train_ids, test_ids) in enumerate(kfold.split(dataset)):
+        print(f"Starting fold {fold}")
         train_subsampler = torch.utils.data.SubsetRandomSampler(train_ids)
         test_subsampler = torch.utils.data.SubsetRandomSampler(test_ids)
         
@@ -76,7 +77,9 @@ def runkfoldcv(model, dataset, device, k_folds, batch_size, learning_rate, num_e
                 correct += (preds == targets).sum().item()
         
         results[fold] = 100.0 * (correct / total)
-    
+        print(f"result for fold {fold} is {results[fold]}")
+    print(results)
+    print(np.mean(np.array(results.values)))
     return results
 
 def runkfoldcv_old(model, dataset, device, k_folds, batch_size, learning_rate, num_epochs, momentum, l2reg):
