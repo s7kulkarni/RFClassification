@@ -21,7 +21,7 @@ arr_psd_folder = "ARR_PSD_"+high_low+'_'+str(n_per_seg)+"_"+str(t_seg)
 main_folder = dronerf_raw_path
 
 def compute_dft_average_streaming(main_folder, t_seg, chunk_size=1000, 
-                                checkpoint_file="/home/zebra/shriniwas/dft_attack/dft_avg_checkpoint.npz"):
+                                checkpoint_file="/project/shriniwas/dft_attack/dft_avg_checkpoint.npz"):
     """
     Compute running average DFT per class in a streaming fashion.
     Returns:
@@ -106,7 +106,7 @@ def compute_dft_average_streaming(main_folder, t_seg, chunk_size=1000,
     return binary_avg, fourclass_avg, tenclass_avg
 
 
-def process_and_save_incrementally(avg_dft_dict, checkpoint_dir='/home/zebra/shriniwas/checkpoints_attack'):
+def process_and_save_incrementally(avg_dft_dict, checkpoint_dir='/project/shriniwas/checkpoints_attack'):
     """
     Processes drone RF data with optimized perturbation strategy.
     """

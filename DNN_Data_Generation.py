@@ -3,8 +3,8 @@ import os
 from scipy.io import loadmat, savemat
 
 # Paths
-load_filename = '/home/zebra/shriniwas/DroneRF_extracted/'  # Path of raw RF data
-save_filename = '/home/zebra/shriniwas/DNN/'  # Path to save the final CSV
+load_filename = '/project/shriniwas/DroneRF_extracted/'  # Path of raw RF data
+save_filename = '/project/shriniwas/DNN/'  # Path to save the final CSV
 
 # Parameters
 BUI = {

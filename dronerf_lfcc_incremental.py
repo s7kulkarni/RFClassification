@@ -20,7 +20,7 @@ features_folder = dronerf_feat_path
 n_per_seg = 4096 # length of each segment (powers of 2)
 high_low = 'LH' #'L', 'H' # high or low range of frequency
 arr_lfcc_folder = "ARR_LFCC_"+high_low+'_'+str(t_seg)+"_"+"PERTURBED"+"_"+"drones"+"_"+"05"+"/"
-perturbation_filepath = "/home/zebra/shriniwas/RFClassification/two_class_perturbation_001.npy"
+perturbation_filepath = "/project/shriniwas/RFClassification/two_class_perturbation_001.npy"
 main_folder = dronerf_raw_path
 
 # --- New function ---
@@ -88,7 +88,7 @@ def compute_improved_lfcc(signal, fs, num_filters=24, num_coeffs=12, fmin=0, fma
     lfcc_vector = np.concatenate([np.atleast_1d(zero_order), lfcc, np.atleast_1d(log_energy)])
     return lfcc_vector
 
-def process_and_save_incrementally(checkpoint_dir='/home/zebra/shriniwas/checkpoints_lfcc'):
+def process_and_save_incrementally(checkpoint_dir='/project/shriniwas/checkpoints_lfcc'):
     """
     Processes drone RF data incrementally, calculates PSD, and saves results incrementally.
     """

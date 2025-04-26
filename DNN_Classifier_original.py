@@ -55,7 +55,7 @@ batch_length         = 10
 show_inter_results   = 0
 ############################### Loading ##################################
 print("Loading Data ...")
-Data = np.loadtxt("/home/zebra/shriniwas/DNN/RF_Data.csv", delimiter=",")
+Data = np.loadtxt("/project/shriniwas/DNN/RF_Data.csv", delimiter=",")
 ############################## Splitting #################################
 print("Preparing Data ...")
 x = Data[0:2048, :]  # Features (frequency bins)

@@ -17,11 +17,11 @@ n_overlap_spec = 120
 win_type = 'hamming' # make ends of each segment match
 high_low = 'L' #'L', 'H' # high or low range of frequency
 arr_psd_folder = "ARR_PSD_"+high_low+'_'+str(n_per_seg)+"_"+str(t_seg)+"_"+"PERTURBED"+"_"+"drones"+"_"+"04"+"/"
-perturbation_filepath = "/home/zebra/shriniwas/RFClassification/four_class_perturbation_001.npy"
+perturbation_filepath = "/project/shriniwas/RFClassification/four_class_perturbation_001.npy"
 main_folder = dronerf_raw_path
 
 
-def process_and_save_incrementally(checkpoint_dir='/home/zebra/shriniwas/checkpoints_1'):
+def process_and_save_incrementally(checkpoint_dir='/project/shriniwas/checkpoints_1'):
     """
     Processes drone RF data incrementally, calculates PSD, and saves results incrementally.
     """

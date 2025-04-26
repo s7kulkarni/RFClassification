@@ -71,7 +71,7 @@ from loading_functions import load_dronerf_raw_stream
 #     dataset_shape = (total_samples,) + first_chunk_shape  # Construct final dataset shape
 #     return min_vals, max_vals, dataset_shape
 
-def compute_min_max_streaming(main_folder, t_seg, chunk_size=1000, checkpoint_file="/home/zebra/shriniwas/RFUAV/min_max_checkpoint.npz"):
+def compute_min_max_streaming(main_folder, t_seg, chunk_size=1000, checkpoint_file="/project/shriniwas/RFUAV/min_max_checkpoint.npz"):
     """
     Compute min/max values in a streaming fashion to avoid memory overload.
     Also determine the full dataset shape. Supports checkpointing.
@@ -169,7 +169,7 @@ def compute_min_max_streaming(main_folder, t_seg, chunk_size=1000, checkpoint_fi
 
 #     return Xs_norm, ys_arr, y4s_arr, y10s_arr
 
-def normalize_data_memmap(main_folder, t_seg, min_vals, max_vals, output_path, labels_output_path, dataset_shape, chunk_size=1000, checkpoint_file='/home/zebra/shriniwas/RFUAV/checkpoint.txt'):
+def normalize_data_memmap(main_folder, t_seg, min_vals, max_vals, output_path, labels_output_path, dataset_shape, chunk_size=1000, checkpoint_file='/project/shriniwas/RFUAV/checkpoint.txt'):
     """
     Normalize data in a memory-mapped fashion, avoiding full memory load.
     Includes checkpointing to resume if interrupted.
@@ -228,16 +228,16 @@ def normalize_data_memmap(main_folder, t_seg, min_vals, max_vals, output_path, l
     return Xs_norm, ys_memmap, y4s_memmap, y10s_memmap
 
 # Main execution
-main_folder = '/home/zebra/shriniwas/DroneRF_extracted/'
+main_folder = '/project/shriniwas/DroneRF_extracted/'
 t_seg = 0.25  # ms
 
 min_vals, max_vals, dataset_shape = compute_min_max_streaming(main_folder, t_seg)
 print("min_vals, max_vals, dataset_shape", min_vals, max_vals, dataset_shape)
 
-output_path = '/home/zebra/shriniwas/RFUAV/normalized_x.dat'
-labels_output_path = ['/home/zebra/shriniwas/RFUAV/ys.dat',
-                      '/home/zebra/shriniwas/RFUAV/y4s.dat',
-                      '/home/zebra/shriniwas/RFUAV/y10s.dat']
+output_path = '/project/shriniwas/RFUAV/normalized_x.dat'
+labels_output_path = ['/project/shriniwas/RFUAV/ys.dat',
+                      '/project/shriniwas/RFUAV/y4s.dat',
+                      '/project/shriniwas/RFUAV/y10s.dat']
 Xs_norm, ys_arr, y4s_arr, y10s_arr = normalize_data_memmap(main_folder, t_seg, min_vals, max_vals, output_path, labels_output_path, dataset_shape)
 
 dataset = DroneData(Xs_norm, y4s_arr)  # Assume y10s_arr is loaded correctly
