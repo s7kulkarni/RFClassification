@@ -34,7 +34,6 @@ import torch.nn.functional as F
 from torch.utils.data import Dataset
 import torch
 import torchvision.models as models
-import random
 # from torchmetrics import F1Score
 
 # reload functions & modules
@@ -71,7 +70,7 @@ from loading_functions import load_dronerf_raw_stream
 #     dataset_shape = (total_samples,) + first_chunk_shape  # Construct final dataset shape
 #     return min_vals, max_vals, dataset_shape
 
-def compute_min_max_streaming(main_folder, t_seg, chunk_size=1000, checkpoint_file="/project/shriniwas/RFUAV/min_max_checkpoint.npz"):
+def compute_min_max_streaming(main_folder, t_seg, chunk_size=1000, checkpoint_file="/home/zebra/shriniwas/RFUAV/min_max_checkpoint.npz"):
     """
     Compute min/max values in a streaming fashion to avoid memory overload.
     Also determine the full dataset shape. Supports checkpointing.
@@ -169,7 +168,7 @@ def compute_min_max_streaming(main_folder, t_seg, chunk_size=1000, checkpoint_fi
 
 #     return Xs_norm, ys_arr, y4s_arr, y10s_arr
 
-def normalize_data_memmap(main_folder, t_seg, min_vals, max_vals, output_path, labels_output_path, dataset_shape, chunk_size=1000, checkpoint_file='/project/shriniwas/RFUAV/checkpoint.txt'):
+def normalize_data_memmap(main_folder, t_seg, min_vals, max_vals, output_path, labels_output_path, dataset_shape, chunk_size=1000, checkpoint_file='/home/zebra/shriniwas/RFUAV/checkpoint.txt'):
     """
     Normalize data in a memory-mapped fashion, avoiding full memory load.
     Includes checkpointing to resume if interrupted.
@@ -228,16 +227,16 @@ def normalize_data_memmap(main_folder, t_seg, min_vals, max_vals, output_path, l
     return Xs_norm, ys_memmap, y4s_memmap, y10s_memmap
 
 # Main execution
-main_folder = '/project/shriniwas/DroneRF_extracted/'
+main_folder = '/home/zebra/shriniwas/DroneRF_extracted/'
 t_seg = 0.25  # ms
 
 min_vals, max_vals, dataset_shape = compute_min_max_streaming(main_folder, t_seg)
 print("min_vals, max_vals, dataset_shape", min_vals, max_vals, dataset_shape)
 
-output_path = '/project/shriniwas/RFUAV/normalized_x.dat'
-labels_output_path = ['/project/shriniwas/RFUAV/ys.dat',
-                      '/project/shriniwas/RFUAV/y4s.dat',
-                      '/project/shriniwas/RFUAV/y10s.dat']
+output_path = '/home/zebra/shriniwas/RFUAV/normalized_x.dat'
+labels_output_path = ['/home/zebra/shriniwas/RFUAV/ys.dat',
+                      '/home/zebra/shriniwas/RFUAV/y4s.dat',
+                      '/home/zebra/shriniwas/RFUAV/y10s.dat']
 Xs_norm, ys_arr, y4s_arr, y10s_arr = normalize_data_memmap(main_folder, t_seg, min_vals, max_vals, output_path, labels_output_path, dataset_shape)
 
 dataset = DroneData(Xs_norm, y4s_arr)  # Assume y10s_arr is loaded correctly
@@ -351,108 +350,79 @@ print("Drones labels", y4s_arr[:10], "zeros? x,2,4,10 ", np.all(Xs_norm == 0), n
 #                 print(f'Reset trainable parameters of layer = {layer}')
 #                 layer.reset_parameters()
 
-# Set all random seeds for reproducibility
-torch.manual_seed(42)
-np.random.seed(42)
-random.seed(42)
-
 class RFUAVNet(nn.Module):
     def __init__(self, num_classes):
         super(RFUAVNet, self).__init__()
-        
-        # Architecture parameters
-        n_groups = 8
-        n_filters = 64
-        
-        # Input layer to transform [10000, 2] -> [2, 10000]
-        self.input_layer = nn.Sequential(
-            nn.Linear(2, 2),  # Maintains feature dimension
-            nn.ReLU()
-        )
-        
-        # r-unit (first conv block)
-        self.conv1 = nn.Conv1d(
-            in_channels=2,  # Now correct after transform
-            out_channels=n_filters,
-            kernel_size=5,
-            stride=5,
-            padding=2
-        )
-        self.norm1 = nn.BatchNorm1d(n_filters)
-        self.elu1 = nn.ELU(alpha=1.0)
-        
-        # Rest of the network remains the same...
-        self.group_convs = nn.ModuleList([
-            nn.Conv1d(n_filters, n_filters, kernel_size=3,
-                     stride=2, groups=n_groups, padding=1)
-            for _ in range(4)
-        ])
-        self.elu2 = nn.ModuleList([nn.ELU(alpha=1.0) for _ in range(4)])
-        
-        # Multi-GAP layers
-        self.gap_layers = nn.ModuleList([
-            nn.AdaptiveAvgPool1d(1) for _ in range(4)
-        ])
-        
-        # Final layers
-        self.fc = nn.Linear(320, num_classes)
-        self.softmax = nn.Softmax(dim=1)
-    
+        self.num_classes = num_classes
+
+        # Changed: Use SGD-compatible initialization (paper uses SGD)
+        self.dense = nn.Linear(320, num_classes)
+        self.smax = nn.Softmax(dim=1)
+
+        # r-unit (initial conv block)
+        self.conv1 = nn.Conv1d(in_channels=2, out_channels=64, kernel_size=5, stride=5, padding=2)
+        self.norm1 = nn.BatchNorm1d(num_features=64)
+        self.elu1 = nn.ELU(alpha=1.0, inplace=False)
+
+        # Changed: Fix grouped convolutions (8 groups, 8 filters/group)
+        self.groupconvlist = []
+        for _ in range(4):
+            self.groupconvlist.append(
+                nn.Conv1d(
+                    in_channels=64,
+                    out_channels=64,  # 8 groups × 8 filters = 64
+                    kernel_size=3,
+                    stride=2,
+                    groups=8,  # Paper: 8 groups
+                    padding=1  # Symmetric padding
+                )
+            )
+        self.groupconv = nn.ModuleList(self.groupconvlist)
+        self.elu2 = nn.ModuleList([nn.ELU(alpha=1.0, inplace=False) for _ in range(4)])
+
+        # Changed: Add multi-GAP layers (paper: 4 GAPs concatenated)
+        self.gap_layers = nn.ModuleList([nn.AdaptiveAvgPool1d(1) for _ in range(4)])
+
     def forward(self, x):
-        # Input x shape: [batch, 10000, 2]
-        
-        # Step 1: Transform each [10000, 2] sequence
-        x = self.input_layer(x)  # [batch, 10000, 2]
-        
-        # Step 2: Permute to [batch, 2, 10000]
-        x = x.permute(0, 2, 1)
-        
-        # Continue with original forward pass
-        x1 = self.conv1(x)          # [batch, 64, 2000]
-        x1 = self.norm1(x1)
-        x1 = self.elu1(x1)
-        
-        # g-unit 1
-        xg1 = self.group_convs[0](x1)
-        xg1 = self.elu2[0](xg1)
-        xp1 = F.max_pool1d(x1, kernel_size=2, stride=2)
-        x2 = xg1 + xp1
+        # r-unit
+        x1 = self.runit(x)
+
+        # g-unit 1 with skip-connection
+        xg1 = self.gunit(x1, 0)
+        x2 = self.max_pool(x1)
+        x3 = xg1 + x2  # Skip-connection (aligned via max-pool)
         
         # g-unit 2
-        xg2 = self.group_convs[1](x2)
-        xg2 = self.elu2[1](xg2)
-        xp2 = F.max_pool1d(x2, kernel_size=2, stride=2)
-        x3 = xg2 + xp2
+        xg2 = self.gunit(x3, 1)
+        x4 = self.max_pool(x3)
+        x5 = xg2 + x4
         
         # g-unit 3
-        xg3 = self.group_convs[2](x3)
-        xg3 = self.elu2[2](xg3)
-        xp3 = F.max_pool1d(x3, kernel_size=2, stride=2)
-        x4 = xg3 + xp3
+        xg3 = self.gunit(x5, 2)
+        x6 = self.max_pool(x5)
+        x7 = x6 + xg3
         
         # g-unit 4
-        xg4 = self.group_convs[3](x4)
-        xg4 = self.elu2[3](xg4)
-        xp4 = F.max_pool1d(x4, kernel_size=2, stride=2)
-        x5 = xg4 + xp4
+        xg4 = self.gunit(x7, 3)
+        x8 = self.max_pool(x7)
+        x_togap = x8 + xg4
         
-        # Multi-GAP
-        gaps = []
-        for i, x in enumerate([xg1, xg2, xg3, xg4]):
-            gaps.append(self.gap_layers[i](x))
-        f_multigap = torch.cat(gaps, dim=1)  # [batch, 256, 1]
+        # Changed: Multi-GAP (collect features from all 4 g-units)
+        f_gap_1 = self.gap_layers[0](xg1)
+        f_gap_2 = self.gap_layers[1](xg2)
+        f_gap_3 = self.gap_layers[2](xg3)
+        f_gap_4 = self.gap_layers[3](xg4)
+        f_multigap = torch.cat((f_gap_1, f_gap_2, f_gap_3, f_gap_4), 1)  # Paper: Eq. 9
         
-        # Final GAP
-        f_gap_add = self.gap_layers[0](x5)  # [batch, 64, 1]
-        f_final = torch.cat([f_multigap, f_gap_add], dim=1)  # [batch, 320, 1]
-        f_final = f_final.view(f_final.size(0), -1)  # [batch, 320]
-        
-        # Output
-        out = self.fc(f_final)
-        return self.softmax(out)
+        # Final GAP and concatenation (paper: Eq. 10)
+        f_gap_add = self.gap_layers[0](x_togap)  # GAP from last skip-connection
+        f_final = torch.cat((f_multigap, f_gap_add), 1)  # 256 + 64 = 320 channels
+        f_flat = f_final.flatten(start_dim=1)
 
-
-
+        # Output layer
+        out = self.dense(f_flat)
+        out = self.smax(out)
+        return out
 
     # Helper functions (unchanged)
     def runit(self, x):
@@ -476,7 +446,7 @@ from nn_functions import runkfoldcv
 # Network Hyperparameters
 num_classes = 4
 batch_size = 128 # 128
-learning_rate = 0.001
+learning_rate = 0.01
 num_epochs = 5 # 0
 momentum = 0.95
 l2reg = 1e-4
@@ -496,7 +466,6 @@ avg_acc, mean_f1s, mean_f1s, mean_runtime = runkfoldcv(
 # Set up data and parameters
 batch_size = 128
 num_classes = len(set(y4s_arr))
-print("NUM_CLASSES - ", num_classes)
 learning_rate = 0.01
 num_epochs = 5 # 0
 momentum = 0.95

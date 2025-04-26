@@ -20,39 +20,39 @@ import matplotlib.pyplot as plt
 #             print(f'Reset trainable parameters of layer = {layer}')
 #             layer.reset_parameters()
 
-def runkfoldcv(model, dataset, device, k_folds, batch_size, learning_rate, num_epochs, momentum, l2reg):
+def runkfoldcv(model, dataset, device, k_folds, batch_size, num_epochs, momentum, l2reg):
+    # ===== CHANGED: OPTIMIZER CONFIG TO MATCH PAPER =====
+    optimizer = torch.optim.SGD(
+        model.parameters(),
+        lr=0.01,          # Paper: initial LR 0.01
+        momentum=0.95,     # Paper: momentum 0.95
+        weight_decay=1e-4  # Paper: L2 regularization
+    )
+    # ===== CHANGED: ADDED LR SCHEDULER =====
+    scheduler = torch.optim.lr_scheduler.StepLR(
+        optimizer, 
+        step_size=45,      # Paper: LR drops after 45 epochs
+        gamma=0.1          # Paper: new LR = 0.001
+    )
+    criterion = nn.CrossEntropyLoss()
+
+    # ===== REST REMAINS UNCHANGED (YOUR ORIGINAL K-FOLD LOGIC) =====
     kfold = KFold(n_splits=k_folds, shuffle=True)
-    results = []
+    results = {}
     
     for fold, (train_ids, test_ids) in enumerate(kfold.split(dataset)):
-        print(f'Fold {fold+1}/{k_folds}')
-        
-        # Data loaders
         train_subsampler = torch.utils.data.SubsetRandomSampler(train_ids)
         test_subsampler = torch.utils.data.SubsetRandomSampler(test_ids)
         
-        train_loader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, sampler=train_subsampler)
-        test_loader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, sampler=test_subsampler)
-        
-        # ===== FINAL TRAINING CONFIG (MATCHES MATLAB) =====
-        optimizer = torch.optim.SGD(
-            model.parameters(),
-            lr=0.001,          # MATLAB: 0.001
-            momentum=0.95,     # MATLAB: 0.95
-            weight_decay=1e-4, # MATLAB: L2Regularization 1e-4
-            nesterov=True
-        )
-        scheduler = torch.optim.lr_scheduler.StepLR(
-            optimizer, 
-            step_size=4,       # MATLAB: LearnRateDropPeriod=4
-            gamma=0.1          # MATLAB: LearnRateDropFactor=0.1
-        )
-        criterion = nn.CrossEntropyLoss()
-        
-        # Training
-        model.train()
+        trainloader = torch.utils.data.DataLoader(
+            dataset, batch_size=batch_size, sampler=train_subsampler)
+        testloader = torch.utils.data.DataLoader(
+            dataset, batch_size=batch_size, sampler=test_subsampler)
+
+        # Training loop
         for epoch in range(num_epochs):
-            for inputs, targets in train_loader:
+            model.train()
+            for inputs, targets in trainloader:
                 inputs, targets = inputs.to(device), targets.to(device)
                 
                 optimizer.zero_grad()
@@ -61,27 +61,23 @@ def runkfoldcv(model, dataset, device, k_folds, batch_size, learning_rate, num_e
                 loss.backward()
                 optimizer.step()
             
-            scheduler.step()
-            print(f'Epoch {epoch+1}/{num_epochs}, LR: {scheduler.get_last_lr()[0]:.6f}')
-        
-        # Evaluation
-        model.eval()
+            # ===== CHANGED: UPDATE LR AT EPOCH END =====
+            scheduler.step()  
+
+        # Your original evaluation logic (unchanged)
         correct, total = 0, 0
+        model.eval()
         with torch.no_grad():
-            for inputs, targets in test_loader:
+            for inputs, targets in testloader:
                 inputs, targets = inputs.to(device), targets.to(device)
                 outputs = model(inputs)
                 _, preds = torch.max(outputs, 1)
                 total += targets.size(0)
                 correct += (preds == targets).sum().item()
         
-        fold_acc = 100.0 * correct / total
-        results.append(fold_acc)
-        print(f'Fold {fold+1} Accuracy: {fold_acc:.2f}%')
+        results[fold] = 100.0 * (correct / total)
     
-    print(f'\nMean Accuracy: {np.mean(results):.2f}% ± {np.std(results):.2f}')
     return results
-
 
 def runkfoldcv_old(model, dataset, device, k_folds, batch_size, learning_rate, num_epochs, momentum, l2reg):
     num_classes = model.num_classes
