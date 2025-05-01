@@ -190,6 +190,34 @@ def train_full_precision(encode, model):
             train_residuals.extend(batch_residuals.cpu().numpy())
     return np.array(train_residuals)
 
+def train_combined(rp_encode, rff_encode, sin_encode, rp_model, rff_model, sin_model):
+    train_residuals = []
+    with torch.no_grad():
+        for samples, labels in train_ld:
+            samples = samples.to(device)
+            labels = labels.to(device)
+
+            # Encode with all 3 models
+            rp_hv = rp_encode(samples)
+            rff_hv = rff_encode(samples)
+            sin_hv = sin_encode(samples)
+
+            # Add to models (training)
+            rp_model.add_online(rp_hv, labels)
+            rff_model.add_online(rff_hv, labels)
+            sin_model.add_online(sin_hv, labels)
+
+            # Compute combined similarities (like testing)
+            rp_sim = rp_model(rp_hv)
+            rff_sim = rff_model(rff_hv)
+            sin_sim = sin_model(sin_hv)
+            combined_sim = rp_sim + rff_sim + sin_sim
+
+            # Compute residual (same as testing)
+            batch_residuals = 1 - combined_sim.max(dim=1).values
+            train_residuals.extend(batch_residuals.cpu().numpy())
+    return np.array(train_residuals)
+
 def test_model(rp_encode, rff_encode, sin_encode, rp_model, rff_model, sin_model):
     accuracy = torchmetrics.Accuracy("multiclass", num_classes=len(label_encoder.classes_)).to(device)
     correct = 0
@@ -333,11 +361,11 @@ for seed in seeds:
             sin_model = Centroid(DIMENSIONS, len(label_encoder.classes_)).to(device)
 
             # Train the model
-            rp_residual = train_full_precision(rp_encode, rp_model)
-            rff_residual = train_full_precision(rff_encode, rff_model)
-            sin_residual = train_full_precision(sin_encode, sin_model)
+            # rp_residual = train_full_precision(rp_encode, rp_model)
+            # rff_residual = train_full_precision(rff_encode, rff_model)
+            # sin_residual = train_full_precision(sin_encode, sin_model)
 
-            train_residuals = rp_residual + rff_residual + sin_residual
+            train_residuals = train_combined(rp_encode, rff_encode, sin_encode, rp_model, rff_model, sin_model)
 
             # Compute residuals for anomaly detection
             residuals = []
