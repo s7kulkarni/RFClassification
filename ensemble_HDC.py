@@ -134,7 +134,7 @@ class SinusoidEncoder(nn.Module):
     def __init__(self, out_features, in_features):
         super(SinusoidEncoder, self).__init__()
         self.flatten = torch.nn.Flatten()
-        self.nonlinear_projection = torchhd.embeddings.Sinusoid(in_features, out_features)
+        self.nonlinear_projection = torchhd.embeddings.Sinusoid(in_features, out_features).to(device)
 
     def forward(self, x):
         x = self.flatten(x)
