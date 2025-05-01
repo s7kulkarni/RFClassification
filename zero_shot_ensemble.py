@@ -5,6 +5,7 @@ from sklearn import svm
 from sklearn.model_selection import GridSearchCV
 from sklearn.metrics import accuracy_score
 from sklearn.metrics import f1_score
+from sklearn.metrics import precision_recall_curve, auc
 from sklearn.linear_model import LogisticRegression
 from torch.utils.data import DataLoader
 
@@ -444,6 +445,18 @@ plt.title('ROC Curve for Anomaly Detection')
 plt.legend(loc="lower right")
 plt.savefig('best_seed_roc.png', dpi=300, bbox_inches='tight')
 print(f"\nSaved ROC for best seed {best_seed_data['seed']} (AUC={best_seed_data['auc']:.3f})")
+
+# ===== PLOT BEST PRC =====
+precision, recall, thresholds = precision_recall_curve(best_seed_data['y_true'], best_seed_data['residuals'])
+auprc = auc(recall, precision)
+plt.figure()
+plt.plot(recall, precision, color='blue', lw=2, label=f'AUPRC = {auprc:.3f}')
+plt.xlabel('Recall')
+plt.ylabel('Precision')
+plt.title('Precision-Recall Curve')
+plt.legend()
+plt.savefig('auprc_curve.png', dpi=300)
+plt.close()
 
 # === ORIGINAL METRIC REPORTING ===
 print("\n=== Final Metrics (Averaged Over All Unknown Classes) ===")
