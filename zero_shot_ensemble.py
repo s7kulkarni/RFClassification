@@ -354,12 +354,21 @@ for seed in seeds:
                 rff_preds = rff_model(rff_samples_hv)
                 sin_preds = sin_model(sin_samples_hv)
 
-                similarities = rp_preds + rff_preds + sin_preds
-                
-                # Residual = 1 - max similarity (higher = more anomalous)
-                residual = 1 - similarities.max().item()
+                rp_sim = rp_preds.max().item()  # max similarity
+                rff_sim = rff_preds.max().item()
+                sin_sim = sin_preds.max().item()
+
+                # Sum residuals (1 - sim) just like in training
+                residual = (1 - rp_sim) + (1 - rff_sim) + (1 - sin_sim)
                 residuals.append(residual)
                 y_true.append(1 if y == unknown_class else 0)
+
+                # similarities = rp_preds + rff_preds + sin_preds
+                
+                # # Residual = 1 - max similarity (higher = more anomalous)
+                # residual = 1 - similarities.max().item()
+                # residuals.append(residual)
+                # y_true.append(1 if y == unknown_class else 0)
 
             # === STORE FOR SEED-LEVEL AUC ===
             seed_y_true.extend(y_true)
