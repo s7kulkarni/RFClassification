@@ -449,6 +449,7 @@ print(f"\nSaved ROC for best seed {best_seed_data['seed']} (AUC={best_seed_data[
 # ===== PLOT BEST PRC =====
 precision, recall, thresholds = precision_recall_curve(best_seed_data['y_true'], best_seed_data['residuals'])
 auprc = auc(recall, precision)
+print("AUPRC IS:", auprc)
 plt.figure()
 plt.plot(recall, precision, color='blue', lw=2, label=f'AUPRC = {auprc:.3f}')
 plt.xlabel('Recall')
