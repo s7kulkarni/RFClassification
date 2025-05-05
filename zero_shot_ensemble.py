@@ -406,7 +406,7 @@ for seed in seeds:
             fold_metrics['auroc'].append(roc_auc_score(y_true, residuals))
 
             # Thresholding (95th percentile of normal class residuals)
-            threshold = np.percentile(train_residuals, 85)
+            threshold = np.percentile(train_residuals, 90)
             y_pred = (residuals > threshold).astype(int)
 
             tn = ((y_pred == 0) & (y_true == 0)).sum()  # True negatives
@@ -433,30 +433,32 @@ for seed in seeds:
 
 # ===== PLOT BEST ROC (ONLY ADDITION) =====
 fpr, tpr, _ = roc_curve(best_seed_data['y_true'], best_seed_data['residuals'])
-plt.figure(figsize=(8,6))
+plt.figure(figsize=(6, 3))
 plt.plot(fpr, tpr, color='green', 
          label=f'AUC = {best_seed_data["auc"]:.3f}')
 plt.plot([0,1], [0,1], 'k--')
 plt.xlim([0.0, 1.0])
 plt.ylim([0.0, 1.05])
-plt.xlabel('False Positive Rate')
-plt.ylabel('True Positive Rate')
-plt.title('ROC Curve for Anomaly Detection')
+plt.xlabel('False Positive Rate', fontsize=14)
+plt.ylabel('True Positive Rate', fontsize=14)
+plt.xticks(fontsize=12)
+plt.yticks(fontsize=12)
 plt.legend(loc="lower right")
-plt.savefig('best_seed_roc.png', dpi=300, bbox_inches='tight')
+plt.savefig('best_seed_roc.pdf', dpi=300, bbox_inches='tight')
 print(f"\nSaved ROC for best seed {best_seed_data['seed']} (AUC={best_seed_data['auc']:.3f})")
 
 # ===== PLOT BEST PRC =====
 precision, recall, thresholds = precision_recall_curve(best_seed_data['y_true'], best_seed_data['residuals'])
 auprc = auc(recall, precision)
 print("AUPRC IS:", auprc)
-plt.figure()
+plt.figure(figsize=(6, 3))
 plt.plot(recall, precision, color='blue', lw=2, label=f'AUPRC = {auprc:.3f}')
-plt.xlabel('Recall')
-plt.ylabel('Precision')
-plt.title('Precision-Recall Curve')
+plt.xlabel('Recall', fontsize=14)
+plt.ylabel('Precision', fontsize=14)
+plt.xticks(fontsize=12)
+plt.yticks(fontsize=12)
 plt.legend()
-plt.savefig('auprc_curve.png', dpi=300)
+plt.savefig('auprc_curve.pdf', dpi=300)
 plt.close()
 
 # === ORIGINAL METRIC REPORTING ===
