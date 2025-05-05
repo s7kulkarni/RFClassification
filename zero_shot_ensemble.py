@@ -458,6 +458,7 @@ plt.ylabel('Precision', fontsize=14)
 plt.xticks(fontsize=12)
 plt.yticks(fontsize=12)
 plt.legend()
+plt.tight_layout()
 plt.savefig('auprc_curve.pdf', dpi=300)
 plt.close()
 
