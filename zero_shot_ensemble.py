@@ -444,7 +444,8 @@ plt.ylabel('True Positive Rate', fontsize=14)
 plt.xticks(fontsize=12)
 plt.yticks(fontsize=12)
 plt.legend(loc="lower right")
-plt.savefig('best_seed_roc.pdf', dpi=300, bbox_inches='tight')
+plt.tight_layout()
+plt.savefig('best_seed_roc.pdf', dpi=300)
 print(f"\nSaved ROC for best seed {best_seed_data['seed']} (AUC={best_seed_data['auc']:.3f})")
 
 # ===== PLOT BEST PRC =====
