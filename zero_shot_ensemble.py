@@ -431,6 +431,37 @@ for seed in seeds:
             'auc': seed_auc
         }
 
+# Compute ROC and PRC
+fpr, tpr, _ = roc_curve(best_seed_data['y_true'], best_seed_data['residuals'])
+precision, recall, _ = precision_recall_curve(best_seed_data['y_true'], best_seed_data['residuals'])
+auprc = auc(recall, precision)
+
+# Create vertically stacked subplots with adjusted height
+fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(6, 4.5), gridspec_kw={'height_ratios': [1, 1]}, constrained_layout=True)
+
+# Plot ROC Curve
+ax1.plot(fpr, tpr, color='green', label=f'AUC = {best_seed_data["auc"]:.3f}')
+ax1.plot([0, 1], [0, 1], 'k--')
+ax1.set_xlim([0.0, 1.0])
+ax1.set_ylim([0.0, 1.05])
+ax1.set_xlabel('False Positive Rate', fontsize=14)
+ax1.set_ylabel('True Positive Rate', fontsize=14)
+ax1.tick_params(labelsize=12)
+ax1.legend(loc="lower right")
+
+# Plot PRC Curve
+ax2.plot(recall, precision, color='blue', lw=2, label=f'AUPRC = {auprc:.3f}')
+ax2.set_xlim([0.0, 1.0])
+ax2.set_ylim([0.0, 1.05])
+ax2.set_xlabel('Recall', fontsize=14)
+ax2.set_ylabel('Precision', fontsize=14)
+ax2.tick_params(labelsize=12)
+ax2.legend()
+
+# Save and display
+plt.savefig('combined_roc_prc.pdf', dpi=300)
+print(f"\nSaved combined ROC and PRC for best seed {best_seed_data['seed']} (AUC={best_seed_data['auc']:.3f}, AUPRC={auprc:.3f})")
+
 # ===== PLOT BEST ROC (ONLY ADDITION) =====
 fpr, tpr, _ = roc_curve(best_seed_data['y_true'], best_seed_data['residuals'])
 plt.figure(figsize=(6, 3))
